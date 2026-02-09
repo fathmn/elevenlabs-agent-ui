@@ -138,7 +138,7 @@ export function ConversationWidget() {
         mouseContainer={mouseContainerRef}
         mode="standard"
         displacementScale={200}
-        blurAmount={0.3}
+        blurAmount={1.0}
         saturation={100}
         aberrationIntensity={0}
         elasticity={0}
