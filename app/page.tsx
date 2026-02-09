@@ -1,12 +1,14 @@
 import { LiquidEtherBackground } from "@/app/components/LiquidEtherBackground"
+import { BlurredNavbar } from "@/app/components/BlurredNavbar"
 import { ConversationWidget } from "@/app/components/ConversationWidget"
 
 export default function Home() {
   return (
     <div className="text-foreground relative min-h-dvh overflow-x-hidden">
       <LiquidEtherBackground />
+      <BlurredNavbar />
 
-      <main className="relative z-10 mx-auto w-full max-w-6xl px-4 py-10 sm:py-14">
+      <main className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-10 pt-24 sm:pb-14 sm:pt-28">
         <section
           aria-labelledby="hero"
           className="grid items-start gap-8 lg:grid-cols-[1fr_520px] lg:gap-8"
