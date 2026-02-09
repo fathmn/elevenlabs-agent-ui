@@ -133,7 +133,10 @@ export function ConversationWidget() {
   }, [status])
 
   return (
-    <div ref={mouseContainerRef} className="w-full">
+    <div
+      ref={mouseContainerRef}
+      className="relative h-[70dvh] min-h-[460px] w-full sm:min-h-[520px]"
+    >
       <LiquidGlass
         mouseContainer={mouseContainerRef}
         mode="standard"
@@ -144,9 +147,18 @@ export function ConversationWidget() {
         elasticity={0}
         cornerRadius={32}
         padding="0px"
-        className="w-full"
+        overLight
+        // liquid-glass-react is built for floating pills; we pin it to this panel container.
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          width: "100%",
+          height: "100%",
+        }}
+        className="el-glass-panel w-full"
       >
-        <section className="flex h-[70dvh] min-h-[460px] w-full flex-col sm:min-h-[520px]">
+        <section className="flex h-full w-full flex-col">
           <header className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
             <div className="space-y-0.5">
               <div className="text-sm font-medium leading-5">
@@ -160,7 +172,7 @@ export function ConversationWidget() {
           </header>
 
           <div className="min-h-0 flex-1 px-3 pb-3">
-            <div className="bg-background/10 ring-foreground/10 h-full overflow-hidden rounded-2xl ring-1">
+            <div className="bg-background/25 ring-foreground/15 h-full overflow-hidden rounded-2xl ring-1">
               <Conversation className="min-h-0">
                 <ConversationContent className="space-y-1">
                   {messages.length === 0 ? (

@@ -9,7 +9,7 @@ export default function Home() {
       <main className="relative z-10 mx-auto w-full max-w-6xl px-4 py-10 sm:py-14">
         <section
           aria-labelledby="hero"
-          className="grid items-start gap-8 lg:grid-cols-[1fr_520px] lg:gap-10"
+          className="grid items-start gap-8 lg:grid-cols-[1fr_520px] lg:gap-8"
         >
           <div className="rounded-[32px] border bg-background/20 p-6 shadow-sm backdrop-blur-md sm:p-8">
             <h1
@@ -54,7 +54,7 @@ export default function Home() {
 
           <div
             id="chat"
-            className="lg:sticky lg:top-10 lg:justify-self-end"
+            className="w-full lg:sticky lg:top-10"
             style={{ scrollMarginTop: 80 }}
           >
             <ConversationWidget />
