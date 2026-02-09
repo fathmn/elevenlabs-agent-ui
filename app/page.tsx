@@ -11,30 +11,32 @@ export default function Home() {
       <main className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-10 pt-24 sm:pb-14 sm:pt-28">
         <section
           aria-labelledby="hero"
-          className="grid items-start gap-8 lg:grid-cols-[1fr_520px] lg:gap-8"
+          className="grid items-stretch gap-8 lg:grid-cols-[1fr_520px] lg:gap-8"
         >
-          <div className="rounded-[32px] border bg-background/20 p-6 shadow-sm backdrop-blur-md sm:p-8">
-            <h1
-              id="hero"
-              className="text-balance font-[var(--font-nohemi)] text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl"
-            >
-              Diese Seite wurde zu 100% mit KI erstellt.
-            </h1>
-            <p className="text-pretty mt-4 text-base leading-7 text-foreground/75 sm:text-lg">
-              Wenn du ebenso lernen möchtest, wie man mit Künstlicher
-              Intelligenz Apps und Webseiten erstellen kann, hinterlasse deine
-              Daten.
-            </p>
-
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <a
-                href="#chat"
-                className="inline-flex h-11 items-center justify-center rounded-2xl bg-foreground px-5 text-sm font-medium text-background transition-colors hover:bg-foreground/90"
+          <div className="rounded-[32px] border bg-background/20 p-6 shadow-sm backdrop-blur-md sm:p-8 lg:flex lg:h-full lg:flex-col lg:justify-between">
+            <div>
+              <h1
+                id="hero"
+                className="text-balance font-[var(--font-nohemi)] text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl"
               >
-                Zum Chat
-              </a>
-              <div className="text-sm text-foreground/70">
-                Public agent · kein Backend · startet automatisch
+                Diese Seite wurde zu 100% mit KI erstellt.
+              </h1>
+              <p className="text-pretty mt-4 text-base leading-7 text-foreground/75 sm:text-lg">
+                Wenn du ebenso lernen möchtest, wie man mit Künstlicher
+                Intelligenz Apps und Webseiten erstellen kann, hinterlasse deine
+                Daten im Chat.
+              </p>
+
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <a
+                  href="#chat"
+                  className="inline-flex h-11 items-center justify-center rounded-2xl bg-foreground px-5 text-sm font-medium text-background transition-colors hover:bg-foreground/90"
+                >
+                  Zum Chat
+                </a>
+                <div className="text-sm text-foreground/70">
+                  Public agent · kein Backend · startet automatisch
+                </div>
               </div>
             </div>
 

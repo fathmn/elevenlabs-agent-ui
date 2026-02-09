@@ -63,7 +63,7 @@ export const MessageContent = ({
 )
 
 export type MessageAvatarProps = ComponentProps<typeof Avatar> & {
-  src: string
+  src?: string
   name?: string
 }
 
@@ -73,8 +73,17 @@ export const MessageAvatar = ({
   className,
   ...props
 }: MessageAvatarProps) => (
-  <Avatar className={cn("ring-border size-8 ring-1", className)} {...props}>
-    <AvatarImage alt="" className="mt-0 mb-0" src={src} />
-    <AvatarFallback>{name?.slice(0, 2) || "ME"}</AvatarFallback>
+  <Avatar
+    className={cn(
+      // Minimal avatar: just a small, subtle label (no pictures by default).
+      "size-7 shrink-0 border border-foreground/15 bg-background/40",
+      className
+    )}
+    {...props}
+  >
+    {src ? <AvatarImage alt="" className="mt-0 mb-0" src={src} /> : null}
+    <AvatarFallback className="bg-transparent text-[10px] font-semibold tracking-wide text-foreground/65">
+      {name?.slice(0, 2)?.toUpperCase() || "ME"}
+    </AvatarFallback>
   </Avatar>
 )

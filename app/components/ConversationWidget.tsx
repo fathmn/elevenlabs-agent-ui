@@ -1,6 +1,13 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import LiquidGlass from "liquid-glass-react"
 import type { Status } from "@elevenlabs/react"
 
@@ -59,6 +66,10 @@ export function ConversationWidget() {
     process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || DEFAULT_AGENT_ID
 
   const mouseContainerRef = useRef<HTMLDivElement | null>(null)
+  const [panelSize, setPanelSize] = useState<{
+    width: number
+    height: number
+  } | null>(null)
 
   const [status, setStatus] = useState<Status>("disconnected")
   const [messages, setMessages] = useState<UiMessage[]>([])
@@ -132,6 +143,33 @@ export function ConversationWidget() {
     }
   }, [status])
 
+  useLayoutEffect(() => {
+    const el = mouseContainerRef.current
+    if (!el) return
+
+    const update = () => {
+      const rect = el.getBoundingClientRect()
+      const width = Math.round(rect.width)
+      const height = Math.round(rect.height)
+
+      setPanelSize((prev) => {
+        if (prev && prev.width === width && prev.height === height) return prev
+        return { width, height }
+      })
+    }
+
+    update()
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", update)
+      return () => window.removeEventListener("resize", update)
+    }
+
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   return (
     <div
       ref={mouseContainerRef}
@@ -140,92 +178,103 @@ export function ConversationWidget() {
       <LiquidGlass
         mouseContainer={mouseContainerRef}
         mode="standard"
-        displacementScale={200}
+        displacementScale={100}
         blurAmount={1.0}
-        saturation={100}
+        saturation={140}
         aberrationIntensity={0}
         elasticity={0}
         cornerRadius={32}
         padding="0px"
-        overLight
-        // liquid-glass-react is built for floating pills; we pin it to this panel container.
         style={{
           position: "absolute",
-          top: "50%",
-          left: "50%",
-          width: "100%",
-          height: "100%",
+          inset: 0,
         }}
-        className="el-glass-panel w-full"
+        className="h-full w-full"
       >
-        <section className="flex h-full w-full flex-col">
-          <header className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
-            <div className="space-y-0.5">
-              <div className="text-sm font-medium leading-5">
-                ElevenLabs Chat
-              </div>
-              <div className="text-muted-foreground text-xs leading-4">
-                Public agent · auto-connected
-              </div>
-            </div>
-            <StatusPill status={statusLabel} />
-          </header>
-
-          <div className="min-h-0 flex-1 px-3 pb-3">
-            <div className="bg-background/25 ring-foreground/15 h-full overflow-hidden rounded-2xl ring-1">
-              <Conversation className="min-h-0">
-                <ConversationContent className="space-y-1">
-                  {messages.length === 0 ? (
-                    <ConversationEmptyState
-                      title="Sag hallo"
-                      description="Der Chat startet automatisch. Tipp einfach los."
-                    />
-                  ) : (
-                    messages.map((m) => (
-                      <Message key={m.id} from={m.from}>
-                        <MessageAvatar
-                          name={m.from === "user" ? "Du" : "AI"}
-                          src={m.from === "user" ? "/user.svg" : "/agent.svg"}
-                        />
-                        <MessageContent>
-                          {m.from === "assistant" ? (
-                            <Response>{m.text}</Response>
-                          ) : (
-                            <p className="whitespace-pre-wrap">{m.text}</p>
-                          )}
-                        </MessageContent>
-                      </Message>
-                    ))
-                  )}
-                </ConversationContent>
-                <ConversationScrollButton />
-              </Conversation>
-            </div>
-          </div>
-
-          <div className="px-3 pb-4">
-            <ConversationBar
-              agentId={agentId}
-              userId={userId}
-              autoStart
-              textOnly
-              connectionType="websocket"
-              enableVoiceInput
-              onStatusChange={(s) => setStatus(s)}
-              onMessage={handleIncomingMessage}
-              onSendMessage={handleSendMessage}
-              onError={(err) => setLastError(err.message)}
-              className="px-2"
-            />
-
-            {lastError && (
-              <div className="mt-3 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm">
-                <div className="font-medium">Error</div>
-                <div className="text-muted-foreground break-words">
-                  {lastError}
+        <section
+          className="relative flex flex-col text-sm text-foreground [text-shadow:none] [font:inherit]"
+          style={
+            panelSize
+              ? {
+                  width: `${panelSize.width}px`,
+                  height: `${panelSize.height}px`,
+                }
+              : undefined
+          }
+        >
+          {/* Tint layer: LiquidGlass does the refraction; this adds legibility without global CSS overrides. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-white/70"
+          />
+          <div className="relative flex h-full w-full flex-col">
+            <header className="flex items-center justify-between gap-3 px-5 pb-3 pt-5">
+              <div className="space-y-0.5">
+                <div className="text-sm font-medium leading-5">
+                  ElevenLabs Chat
+                </div>
+                <div className="text-muted-foreground text-xs leading-4">
+                  Public agent · auto-connected
                 </div>
               </div>
-            )}
+              <StatusPill status={statusLabel} />
+            </header>
+
+            <div className="min-h-0 flex-1 px-3 pb-3">
+              <div className="ring-foreground/15 h-full overflow-hidden rounded-2xl bg-background/70 ring-1 backdrop-blur-sm">
+                <Conversation className="min-h-0">
+                  <ConversationContent className="space-y-1">
+                    {messages.length === 0 ? (
+                      <ConversationEmptyState
+                        title="Sag hallo"
+                        description="Der Chat startet automatisch. Tipp einfach los."
+                      />
+                    ) : (
+                      messages.map((m) => (
+                        <Message key={m.id} from={m.from}>
+                          <MessageAvatar
+                            name={m.from === "user" ? "DU" : "AI"}
+                          />
+                          <MessageContent>
+                            {m.from === "assistant" ? (
+                              <Response>{m.text}</Response>
+                            ) : (
+                              <p className="whitespace-pre-wrap">{m.text}</p>
+                            )}
+                          </MessageContent>
+                        </Message>
+                      ))
+                    )}
+                  </ConversationContent>
+                  <ConversationScrollButton />
+                </Conversation>
+              </div>
+            </div>
+
+            <div className="px-3 pb-4">
+              <ConversationBar
+                agentId={agentId}
+                userId={userId}
+                autoStart
+                textOnly
+                connectionType="websocket"
+                enableVoiceInput
+                onStatusChange={(s) => setStatus(s)}
+                onMessage={handleIncomingMessage}
+                onSendMessage={handleSendMessage}
+                onError={(err) => setLastError(err.message)}
+                className="px-2"
+              />
+
+              {lastError && (
+                <div className="mt-3 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm">
+                  <div className="font-medium">Error</div>
+                  <div className="text-muted-foreground break-words">
+                    {lastError}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </section>
       </LiquidGlass>
