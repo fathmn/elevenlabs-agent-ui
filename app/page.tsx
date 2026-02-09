@@ -1,11 +1,11 @@
-import { LightRaysBackground } from "@/app/components/LightRaysBackground"
+import { LiquidEtherBackground } from "@/app/components/LiquidEtherBackground"
 import { BlurredNavbar } from "@/app/components/BlurredNavbar"
 import { ConversationWidget } from "@/app/components/ConversationWidget"
 
 export default function Home() {
   return (
     <div className="text-foreground relative min-h-dvh overflow-x-hidden">
-      <LightRaysBackground />
+      <LiquidEtherBackground />
       <BlurredNavbar />
 
       <main className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-10 pt-24 sm:pb-14 sm:pt-28">
