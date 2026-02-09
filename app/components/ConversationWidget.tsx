@@ -66,10 +66,9 @@ export function ConversationWidget() {
     process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || DEFAULT_AGENT_ID
 
   const mouseContainerRef = useRef<HTMLDivElement | null>(null)
-  const [panelSize, setPanelSize] = useState<{
-    width: number
-    height: number
-  } | null>(null)
+  const [panelSize, setPanelSize] = useState<{ width: number; height: number } | null>(
+    null
+  )
 
   const [status, setStatus] = useState<Status>("disconnected")
   const [messages, setMessages] = useState<UiMessage[]>([])
@@ -187,28 +186,28 @@ export function ConversationWidget() {
         padding="0px"
         style={{
           position: "absolute",
-          inset: 0,
+          top: "50%",
+          left: "50%",
+          width: "100%",
+          height: "100%",
         }}
-        className="h-full w-full"
+        className="w-full"
       >
         <section
-          className="relative flex flex-col text-sm text-foreground [text-shadow:none] [font:inherit]"
+          className="relative flex flex-col text-sm text-foreground [text-shadow:none]"
           style={
             panelSize
-              ? {
-                  width: `${panelSize.width}px`,
-                  height: `${panelSize.height}px`,
-                }
+              ? { width: `${panelSize.width}px`, height: `${panelSize.height}px` }
               : undefined
           }
         >
           {/* Tint layer: LiquidGlass does the refraction; this adds legibility without global CSS overrides. */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-white/70"
+            className="pointer-events-none absolute inset-0 bg-white/55"
           />
           <div className="relative flex h-full w-full flex-col">
-            <header className="flex items-center justify-between gap-3 px-5 pb-3 pt-5">
+            <header className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
               <div className="space-y-0.5">
                 <div className="text-sm font-medium leading-5">
                   ElevenLabs Chat
@@ -221,7 +220,7 @@ export function ConversationWidget() {
             </header>
 
             <div className="min-h-0 flex-1 px-3 pb-3">
-              <div className="ring-foreground/15 h-full overflow-hidden rounded-2xl bg-background/70 ring-1 backdrop-blur-sm">
+              <div className="bg-background/60 ring-foreground/15 h-full overflow-hidden rounded-2xl ring-1 backdrop-blur-sm">
                 <Conversation className="min-h-0">
                   <ConversationContent className="space-y-1">
                     {messages.length === 0 ? (

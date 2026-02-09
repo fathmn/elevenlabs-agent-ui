@@ -75,14 +75,13 @@ export const MessageAvatar = ({
 }: MessageAvatarProps) => (
   <Avatar
     className={cn(
-      // Minimal avatar: just a small, subtle label (no pictures by default).
-      "size-7 shrink-0 border border-foreground/15 bg-background/40",
+      "size-8 ring-1 ring-black/10 bg-white/35 backdrop-blur-sm",
       className
     )}
     {...props}
   >
     {src ? <AvatarImage alt="" className="mt-0 mb-0" src={src} /> : null}
-    <AvatarFallback className="bg-transparent text-[10px] font-semibold tracking-wide text-foreground/65">
+    <AvatarFallback className="bg-transparent text-[11px] font-medium text-foreground/70">
       {name?.slice(0, 2)?.toUpperCase() || "ME"}
     </AvatarFallback>
   </Avatar>
