@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { type Status, useConversation } from "@elevenlabs/react"
-import { ArrowUpIcon, MicIcon, RotateCcwIcon } from "lucide-react"
+import { ArrowUpIcon, MicIcon, RotateCcwIcon, SquareIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -142,11 +142,27 @@ export const ConversationBar = React.forwardRef<HTMLDivElement, ConversationBarP
       onError: (err) => onError?.(normalizeError(err)),
       onMessage: (evt: unknown) => {
         if (!isRecord(evt)) return
+
+        // The SDK calls `onMessage` with a normalized payload:
+        // { message: string, role: "user"|"agent", source?: "user"|"ai" }.
         const msg = getStringField(evt, "message")
+        if (!msg) return
+
+        const role = getStringField(evt, "role")
+        if (role === "user") {
+          onMessage?.({ source: "user", message: msg })
+          return
+        }
+        if (role === "agent") {
+          onMessage?.({ source: "ai", message: msg })
+          return
+        }
+
+        // Back-compat: some payloads may still use `source`.
         const src = getStringField(evt, "source")
-        if (!msg || !src) return
-        if (src !== "user" && src !== "ai") return
-        onMessage?.({ source: src, message: msg })
+        if (src === "user" || src === "ai") {
+          onMessage?.({ source: src, message: msg })
+        }
       },
     })
 
@@ -170,6 +186,18 @@ export const ConversationBar = React.forwardRef<HTMLDivElement, ConversationBarP
         onError?.(normalizeError(err))
       }
     }, [agentId, connectionType, conversation, onError, userId])
+
+    const endSession = React.useCallback(async () => {
+      if (conversation.status === "disconnected" || conversation.status === "disconnecting") {
+        return
+      }
+
+      try {
+        await conversation.endSession()
+      } catch (err) {
+        onError?.(normalizeError(err))
+      }
+    }, [conversation, onError])
 
     React.useEffect(() => {
       if (!autoStart) return
@@ -329,7 +357,20 @@ export const ConversationBar = React.forwardRef<HTMLDivElement, ConversationBarP
       <div ref={ref} className={cn("flex w-full items-end gap-2", className)}>
         <div className="flex h-11 items-center gap-2 px-1">
           <span className={cn("size-2 rounded-full", statusDotClass)} />
-          {!isConnected && (
+          {isConnected ? (
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-9 w-9"
+              onClick={() => void endSession()}
+              disabled={isDisconnecting}
+              aria-label="Disconnect"
+              title="Disconnect"
+            >
+              <SquareIcon className="size-4" />
+            </Button>
+          ) : (
             <Button
               type="button"
               size="icon"

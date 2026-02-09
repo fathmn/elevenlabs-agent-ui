@@ -146,7 +146,7 @@ export function ConversationWidget() {
         padding="0px"
         className="w-full"
       >
-        <section className="flex h-[70dvh] min-h-[520px] w-full flex-col">
+        <section className="flex h-[70dvh] min-h-[460px] w-full flex-col sm:min-h-[520px]">
           <header className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
             <div className="space-y-0.5">
               <div className="text-sm font-medium leading-5">
