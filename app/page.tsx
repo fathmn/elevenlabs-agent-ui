@@ -13,13 +13,13 @@ export default function Home() {
           aria-labelledby="hero"
           className="grid items-stretch gap-8 lg:grid-cols-[1fr_520px] lg:gap-8"
         >
-          <div className="rounded-[32px] border bg-background/20 p-6 shadow-sm backdrop-blur-md sm:p-8 lg:flex lg:h-full lg:flex-col lg:justify-between">
+          <div className="rounded-[32px] border bg-background/20 p-6 shadow-sm backdrop-blur-md sm:p-8 flex h-full flex-col gap-8">
             <div>
               <h1
                 id="hero"
                 className="text-balance font-[var(--font-nohemi)] text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl"
               >
-                Diese Seite wurde zu 100% mit KI erstellt.
+                Diese Seite wurde zu 100% mit KI erstellt. Du möchtest erfahren, wie?
               </h1>
               <p className="text-pretty mt-4 text-base leading-7 text-foreground/75 sm:text-lg">
                 Wenn du ebenso lernen möchtest, wie man mit Künstlicher
@@ -40,7 +40,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="mt-8 grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-3xl border bg-background/10 p-4">
                 <div className="text-sm font-medium">Chat-first</div>
                 <p className="mt-1 text-sm leading-6 text-foreground/70">
@@ -58,7 +58,7 @@ export default function Home() {
 
           <div
             id="chat"
-            className="w-full lg:sticky lg:top-10"
+            className="w-full lg:sticky lg:top-24"
             style={{ scrollMarginTop: 80 }}
           >
             <ConversationWidget />
