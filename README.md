@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ElevenLabs Agent UI (Next.js)
 
-## Getting Started
+Production-ready Next.js (App Router, TypeScript) web app that hosts a simple chat/voice UI and starts an ElevenLabs Agent session via `@elevenlabs/react`.
 
-First, run the development server:
+## Requirements
+
+- Node.js >= 18
+- pnpm (recommended): `corepack enable`
+
+## Setup
+
+Install deps:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Start dev server:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open `http://localhost:3000`.
 
-## Learn More
+## ElevenLabs UI Components
 
-To learn more about Next.js, take a look at the following resources:
+This repo vendors ElevenLabs UI components locally (shadcn-style) under `components/ui/*`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+To (re)install components from the ElevenLabs UI registry:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+pnpm dlx @elevenlabs/cli@latest components add orb
+pnpm dlx @elevenlabs/cli@latest components add conversation
+pnpm dlx @elevenlabs/cli@latest components add message
+pnpm dlx @elevenlabs/cli@latest components add response
+```
 
-## Deploy on Vercel
+## Public vs Private Agent
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The UI lives in `app/components/ConversationWidget.tsx` and uses WebRTC (`connectionType: "webrtc"`).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Public agent (no backend required)
+
+Nothing to configure; it falls back to the default agent id in `app/components/ConversationWidget.tsx`.
+
+### Private agent (recommended for production)
+
+Set environment variables (locally in `.env.local`, on Vercel in Project Settings):
+
+```bash
+ELEVENLABS_API_KEY=...
+NEXT_PUBLIC_ELEVENLABS_AGENT_ID=agent_...
+```
+
+Server routes:
+
+- `app/api/conversation-token/route.ts`: mints a WebRTC `conversationToken` (used by the UI)
+- `app/api/get-signed-url/route.ts`: returns a `signedUrl` for WebSocket connections (included for completeness)
+
+Important: the API key stays server-side (never exposed to the client).
+In production, protect these routes with your own app auth if you don’t want anonymous users to start sessions.
+
+## Deploy (Vercel)
+
+1. Push this repo to GitHub/GitLab.
+2. Create a new Vercel Project and import the repo.
+3. If using a private agent, set `ELEVENLABS_API_KEY` in Vercel Project Settings.
+4. If using a private agent, set `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` in Vercel Project Settings.
+5. Deploy.
+
+Mic/WebRTC requires HTTPS; Vercel provides this automatically (localhost is also a secure context).
