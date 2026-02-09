@@ -3,7 +3,7 @@ import { ConversationWidget } from "@/app/components/ConversationWidget"
 
 export default function Home() {
   return (
-    <div className="text-foreground relative min-h-dvh overflow-hidden">
+    <div className="text-foreground relative min-h-dvh overflow-x-hidden">
       <LiquidEtherBackground />
 
       <main className="relative z-10 mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-4 py-10">
