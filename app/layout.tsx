@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -10,6 +11,23 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const nohemi = localFont({
+  src: [
+    {
+      path: "../node_modules/@tamagui/font-nohemi/fonts/Nohemi-Regular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../node_modules/@tamagui/font-nohemi/fonts/Nohemi-Bold.ttf",
+      weight: "700",
+      style: "normal",
+    },
+  ],
+  variable: "--font-nohemi",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -25,7 +43,7 @@ export default function RootLayout({
   return (
     <html lang="de">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${nohemi.variable} antialiased`}
       >
         {children}
       </body>

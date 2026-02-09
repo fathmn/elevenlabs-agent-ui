@@ -1,0 +1,389 @@
+"use client"
+
+import * as React from "react"
+import { type Status, useConversation } from "@elevenlabs/react"
+import { ArrowUpIcon, MicIcon, RotateCcwIcon } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { VoiceButton, type VoiceButtonState } from "@/components/ui/voice-button"
+
+export interface ConversationBarProps {
+  /**
+   * ElevenLabs Agent ID to connect to (public agents can connect directly).
+   */
+  agentId: string
+
+  /**
+   * Optional user ID (your customer id) to be attached to the session.
+   */
+  userId?: string
+
+  /**
+   * Start the session automatically on mount.
+   * @default true
+   */
+  autoStart?: boolean
+
+  /**
+   * Chat-first: do not touch microphone APIs.
+   * @default true
+   */
+  textOnly?: boolean
+
+  /**
+   * Connection type for chat.
+   * @default "websocket"
+   */
+  connectionType?: "websocket" | "webrtc"
+
+  /**
+   * Enable optional voice dictation (browser speech recognition).
+   * This is separate from ElevenLabs' voice conversations.
+   * @default true
+   */
+  enableVoiceInput?: boolean
+
+  className?: string
+  placeholder?: string
+
+  onStatusChange?: (status: Status) => void
+  onConnect?: (conversationId: string) => void
+  onDisconnect?: () => void
+  onError?: (error: Error) => void
+  onMessage?: (message: { source: "user" | "ai"; message: string }) => void
+  onSendMessage?: (message: string) => void
+}
+
+type BrowserSpeechRecognition = {
+  lang: string
+  interimResults: boolean
+  continuous: boolean
+  start: () => void
+  stop: () => void
+  abort: () => void
+  onresult: ((event: unknown) => void) | null
+  onend: (() => void) | null
+  onerror: ((event: unknown) => void) | null
+}
+
+type BrowserSpeechRecognitionCtor = new () => BrowserSpeechRecognition
+
+function getSpeechRecognitionCtor(): BrowserSpeechRecognitionCtor | null {
+  const w = window as unknown as Record<string, unknown>
+  const sr = w["SpeechRecognition"] ?? w["webkitSpeechRecognition"]
+  return typeof sr === "function"
+    ? (sr as unknown as BrowserSpeechRecognitionCtor)
+    : null
+}
+
+function normalizeError(err: unknown): Error {
+  if (err instanceof Error) return err
+  if (typeof err === "string") return new Error(err)
+  try {
+    return new Error(JSON.stringify(err))
+  } catch {
+    return new Error(String(err))
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null
+}
+
+function getStringField(obj: Record<string, unknown>, key: string): string | null {
+  const value = obj[key]
+  return typeof value === "string" ? value : null
+}
+
+function getNumberField(obj: Record<string, unknown>, key: string): number | null {
+  const value = obj[key]
+  return typeof value === "number" ? value : null
+}
+
+function getIndex(value: unknown, index: number): unknown {
+  if (Array.isArray(value)) return value[index]
+  if (isRecord(value)) return value[String(index)]
+  return undefined
+}
+
+export const ConversationBar = React.forwardRef<HTMLDivElement, ConversationBarProps>(
+  (
+    {
+      agentId,
+      userId,
+      autoStart = true,
+      textOnly = true,
+      connectionType = "websocket",
+      enableVoiceInput = true,
+      className,
+      placeholder = "Schreibe eine Nachricht…",
+      onStatusChange,
+      onConnect,
+      onDisconnect,
+      onError,
+      onMessage,
+      onSendMessage,
+    },
+    ref
+  ) => {
+    const [textInput, setTextInput] = React.useState("")
+    const [voiceState, setVoiceState] = React.useState<VoiceButtonState>("idle")
+
+    const didAutoStartRef = React.useRef(false)
+    const pendingMessagesRef = React.useRef<string[]>([])
+    const recognitionRef = React.useRef<BrowserSpeechRecognition | null>(null)
+
+    const conversation = useConversation({
+      textOnly,
+      onConnect: ({ conversationId }) => onConnect?.(conversationId),
+      onDisconnect: () => onDisconnect?.(),
+      onError: (err) => onError?.(normalizeError(err)),
+      onMessage: (evt: unknown) => {
+        if (!isRecord(evt)) return
+        const msg = getStringField(evt, "message")
+        const src = getStringField(evt, "source")
+        if (!msg || !src) return
+        if (src !== "user" && src !== "ai") return
+        onMessage?.({ source: src, message: msg })
+      },
+    })
+
+    React.useEffect(() => {
+      onStatusChange?.(conversation.status)
+    }, [conversation.status, onStatusChange])
+
+    const startSession = React.useCallback(async () => {
+      if (!agentId) return
+      if (conversation.status === "connected" || conversation.status === "connecting") {
+        return
+      }
+
+      try {
+        await conversation.startSession({
+          agentId,
+          connectionType,
+          userId,
+        })
+      } catch (err) {
+        onError?.(normalizeError(err))
+      }
+    }, [agentId, connectionType, conversation, onError, userId])
+
+    React.useEffect(() => {
+      if (!autoStart) return
+      if (!agentId) return
+      if (didAutoStartRef.current) return
+      didAutoStartRef.current = true
+      void startSession()
+    }, [agentId, autoStart, startSession])
+
+    const flushPending = React.useCallback(() => {
+      if (conversation.status !== "connected") return
+      if (pendingMessagesRef.current.length === 0) return
+
+      const pending = pendingMessagesRef.current
+      pendingMessagesRef.current = []
+      for (const msg of pending) {
+        conversation.sendUserMessage(msg)
+      }
+    }, [conversation])
+
+    React.useEffect(() => {
+      flushPending()
+    }, [flushPending, conversation.status])
+
+    const handleSendText = React.useCallback(() => {
+      const messageToSend = textInput.trim()
+      if (!messageToSend) return
+
+      setTextInput("")
+      onSendMessage?.(messageToSend)
+
+      if (conversation.status === "connected") {
+        conversation.sendUserMessage(messageToSend)
+        return
+      }
+
+      pendingMessagesRef.current.push(messageToSend)
+      void startSession()
+    }, [conversation, onSendMessage, startSession, textInput])
+
+    const handleKeyDown = React.useCallback(
+      (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault()
+          handleSendText()
+        }
+      },
+      [handleSendText]
+    )
+
+    const stopDictation = React.useCallback(() => {
+      const rec = recognitionRef.current
+      if (!rec) return
+      setVoiceState("processing")
+      rec.stop()
+    }, [])
+
+    const startDictation = React.useCallback(() => {
+      const Ctor = getSpeechRecognitionCtor()
+      if (!Ctor) {
+        setVoiceState("error")
+        onError?.(
+          new Error(
+            "Voice input is not supported in this browser (SpeechRecognition missing)."
+          )
+        )
+        return
+      }
+
+      // Stop any previous session
+      recognitionRef.current?.abort()
+
+      const rec = new Ctor()
+      recognitionRef.current = rec
+
+      rec.lang = "de-DE"
+      rec.interimResults = true
+      rec.continuous = false
+
+      setVoiceState("recording")
+
+      rec.onresult = (event) => {
+        // Append final transcripts to the input.
+        let finalText = ""
+        if (!isRecord(event)) return
+        const resultIndex = getNumberField(event, "resultIndex") ?? 0
+        const results = (event as Record<string, unknown>)["results"]
+        if (!results || typeof results !== "object") return
+        const length = isRecord(results) ? getNumberField(results, "length") : null
+        if (length === null) return
+
+        for (let i = resultIndex; i < length; i++) {
+          const res = getIndex(results, i)
+          if (!isRecord(res)) continue
+          if (res["isFinal"] !== true) continue
+
+          const alt0 = getIndex(res, 0)
+          if (!isRecord(alt0)) continue
+          const transcript = getStringField(alt0, "transcript")
+          if (transcript) finalText += transcript
+        }
+
+        if (finalText.trim()) {
+          setTextInput((prev) =>
+            prev.trim().length === 0
+              ? finalText.trim()
+              : `${prev.trim()} ${finalText.trim()}`
+          )
+          setVoiceState("success")
+        }
+      }
+
+      rec.onerror = (event) => {
+        console.error("[SpeechRecognition] error", event)
+        setVoiceState("error")
+      }
+
+      rec.onend = () => {
+        recognitionRef.current = null
+        setVoiceState("idle")
+      }
+
+      try {
+        rec.start()
+      } catch (err) {
+        recognitionRef.current = null
+        setVoiceState("error")
+        onError?.(normalizeError(err))
+      }
+    }, [onError])
+
+    const toggleDictation = React.useCallback(() => {
+      if (voiceState === "recording" || voiceState === "processing") {
+        stopDictation()
+      } else {
+        startDictation()
+      }
+    }, [startDictation, stopDictation, voiceState])
+
+    const isDisconnecting = conversation.status === "disconnecting"
+    const isConnecting = conversation.status === "connecting"
+    const isConnected = conversation.status === "connected"
+
+    const statusDotClass = React.useMemo(() => {
+      switch (conversation.status) {
+        case "connected":
+          return "bg-emerald-500"
+        case "connecting":
+        case "disconnecting":
+          return "bg-amber-500"
+        default:
+          return "bg-zinc-400"
+      }
+    }, [conversation.status])
+
+    return (
+      <div ref={ref} className={cn("flex w-full items-end gap-2", className)}>
+        <div className="flex h-11 items-center gap-2 px-1">
+          <span className={cn("size-2 rounded-full", statusDotClass)} />
+          {!isConnected && (
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-9 w-9"
+              onClick={() => void startSession()}
+              disabled={isConnecting || isDisconnecting}
+              aria-label="Reconnect"
+              title="Reconnect"
+            >
+              <RotateCcwIcon className="size-4" />
+            </Button>
+          )}
+        </div>
+
+        {enableVoiceInput && (
+          <VoiceButton
+            size="icon"
+            variant="outline"
+            state={voiceState}
+            onPress={toggleDictation}
+            icon={<MicIcon className="size-4" />}
+            className="h-11 w-11 rounded-2xl"
+            aria-label="Voice input"
+            disabled={isDisconnecting}
+          />
+        )}
+
+        <Textarea
+          value={textInput}
+          onChange={(e) => setTextInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          className={cn(
+            "min-h-11 max-h-40 flex-1 resize-none rounded-2xl border-border/60 bg-background/40 px-4 py-3 text-sm shadow-none backdrop-blur-md",
+            "focus-visible:ring-0"
+          )}
+          disabled={isDisconnecting}
+        />
+
+        <Button
+          type="button"
+          size="icon"
+          onClick={handleSendText}
+          disabled={!textInput.trim() || isDisconnecting}
+          className="h-11 w-11 rounded-2xl"
+          aria-label="Send message"
+          title="Send"
+        >
+          <ArrowUpIcon className="size-4" />
+        </Button>
+      </div>
+    )
+  }
+)
+
+ConversationBar.displayName = "ConversationBar"

@@ -1,6 +1,6 @@
 # ElevenLabs Agent UI (Next.js)
 
-Production-ready Next.js (App Router, TypeScript) web app that hosts a simple chat/voice UI and starts an ElevenLabs Agent session via `@elevenlabs/react`.
+Production-ready Next.js (App Router, TypeScript) web app that hosts a chat-first UI and starts an ElevenLabs Agent session via `@elevenlabs/react`.
 
 ## Requirements
 
@@ -34,11 +34,15 @@ pnpm dlx @elevenlabs/cli@latest components add orb
 pnpm dlx @elevenlabs/cli@latest components add conversation
 pnpm dlx @elevenlabs/cli@latest components add message
 pnpm dlx @elevenlabs/cli@latest components add response
+pnpm dlx @elevenlabs/cli@latest components add conversation-bar
+pnpm dlx @elevenlabs/cli@latest components add voice-button
+pnpm dlx @elevenlabs/cli@latest components add speech-input
 ```
 
 ## Public vs Private Agent
 
-The UI lives in `app/components/ConversationWidget.tsx` and uses WebRTC (`connectionType: "webrtc"`).
+The UI lives in `app/components/ConversationWidget.tsx` and is chat-first (auto-connects, text input via `ConversationBar`).
+Voice/mic is optional and only requested if the user uses the voice button (browser SpeechRecognition).
 
 ### Public agent (no backend required)
 
@@ -55,8 +59,8 @@ NEXT_PUBLIC_ELEVENLABS_AGENT_ID=agent_...
 
 Server routes:
 
-- `app/api/conversation-token/route.ts`: mints a WebRTC `conversationToken` (used by the UI)
-- `app/api/get-signed-url/route.ts`: returns a `signedUrl` for WebSocket connections (included for completeness)
+- `app/api/get-signed-url/route.ts`: returns a `signedUrl` for WebSocket connections
+- `app/api/conversation-token/route.ts`: returns a `token` (included for completeness; not required for the public-agent chat flow)
 
 Important: the API key stays server-side (never exposed to the client).
 In production, protect these routes with your own app auth if you don’t want anonymous users to start sessions.
@@ -69,4 +73,4 @@ In production, protect these routes with your own app auth if you don’t want a
 4. If using a private agent, set `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` in Vercel Project Settings.
 5. Deploy.
 
-Mic/WebRTC requires HTTPS; Vercel provides this automatically (localhost is also a secure context).
+Mic and some browser speech APIs require a secure context (HTTPS); Vercel provides this automatically (localhost is also a secure context).
