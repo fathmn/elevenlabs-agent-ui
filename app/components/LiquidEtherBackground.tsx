@@ -5,7 +5,7 @@ import LiquidEther from "@/components/LiquidEther"
 export function LiquidEtherBackground() {
   return (
     <div
-      className="pointer-events-none fixed inset-0 -z-10"
+      className="pointer-events-none fixed inset-0 z-0"
       aria-hidden="true"
     >
       <LiquidEther
@@ -30,4 +30,3 @@ export function LiquidEtherBackground() {
     </div>
   )
 }
-
