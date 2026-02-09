@@ -143,3 +143,7 @@
   text-shadow: none !important;
   color: inherit !important;
 }
+
+.custom-rays canvas {
+  opacity: 0.75;
+}
