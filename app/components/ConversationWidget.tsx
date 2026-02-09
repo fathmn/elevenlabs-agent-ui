@@ -75,6 +75,10 @@ export function ConversationWidget() {
   const [messages, setMessages] = useState<UiMessage[]>([])
   const [lastError, setLastError] = useState<string | null>(null)
 
+  const firstAssistantMessageId = useMemo(() => {
+    return messages.find((m) => m.from === "assistant")?.id ?? null
+  }, [messages])
+
   const lastLocalUserMessageRef = useRef<{ text: string; ts: number } | null>(
     null
   )
@@ -231,27 +235,54 @@ export function ConversationWidget() {
                       />
                     ) : (
                       messages.map((m) => {
-                        const animateIn = m.from === "assistant"
+                        const isAssistant = m.from === "assistant"
+                        const isFirstAssistant =
+                          isAssistant && m.id === firstAssistantMessageId
 
                         return (
-                          <motion.div
-                            key={m.id}
-                            layout="position"
-                            initial={
-                              animateIn
-                                ? { opacity: 0, y: 12, scale: 0.98 }
-                                : false
-                            }
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            transition={{
-                              duration: 0.22,
-                              ease: [0.22, 1, 0.36, 1],
-                            }}
-                          >
-                            <Message from={m.from}>
-                              <MessageAvatar
-                                name={m.from === "user" ? "DU" : "AI"}
-                              />
+                          <Message key={m.id} from={m.from}>
+                            <MessageAvatar
+                              name={m.from === "user" ? "DU" : "AI"}
+                            />
+                            <motion.div
+                              layout="position"
+                              initial={
+                                isAssistant
+                                  ? {
+                                      opacity: 0,
+                                      y: 18,
+                                      scale: 0.96,
+                                      filter: isFirstAssistant
+                                        ? "blur(10px)"
+                                        : "blur(6px)",
+                                    }
+                                  : false
+                              }
+                              animate={{
+                                opacity: 1,
+                                y: 0,
+                                scale: 1,
+                                filter: "blur(0px)",
+                              }}
+                              transition={
+                                isFirstAssistant
+                                  ? {
+                                      type: "spring",
+                                      stiffness: 320,
+                                      damping: 26,
+                                      mass: 0.8,
+                                    }
+                                  : {
+                                      duration: 0.18,
+                                      ease: [0.22, 1, 0.36, 1],
+                                    }
+                              }
+                              style={{
+                                transformOrigin:
+                                  m.from === "assistant" ? "0% 100%" : "100% 100%",
+                              }}
+                              className="will-change-transform"
+                            >
                               <MessageContent>
                                 {m.from === "assistant" ? (
                                   <Response>{m.text}</Response>
@@ -261,8 +292,8 @@ export function ConversationWidget() {
                                   </p>
                                 )}
                               </MessageContent>
-                            </Message>
-                          </motion.div>
+                            </motion.div>
+                          </Message>
                         )
                       })
                     )}
