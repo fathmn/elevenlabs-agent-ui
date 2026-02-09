@@ -1,8 +1,12 @@
 import { LiquidEtherBackground } from "@/app/components/LiquidEtherBackground"
 import { BlurredNavbar } from "@/app/components/BlurredNavbar"
 import { ConversationWidget } from "@/app/components/ConversationWidget"
+import { TextEffect } from "@/components/motion-primitives/text-effect"
 
 export default function Home() {
+  const heroTitle =
+    "Diese Seite wurde zu 100% mit KI erstellt. Du möchtest erfahren, wie?"
+
   return (
     <div className="text-foreground relative min-h-dvh overflow-x-hidden">
       <LiquidEtherBackground />
@@ -19,7 +23,9 @@ export default function Home() {
                 id="hero"
                 className="text-balance font-[var(--font-nohemi)] text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl"
               >
-                Diese Seite wurde zu 100% mit KI erstellt. Du möchtest erfahren, wie?
+                <TextEffect as="span" per="char" preset="fade">
+                  {heroTitle}
+                </TextEffect>
               </h1>
               <p className="text-pretty mt-4 text-base leading-7 text-foreground/75 sm:text-lg">
                 Wenn du ebenso lernen möchtest, wie man mit Künstlicher

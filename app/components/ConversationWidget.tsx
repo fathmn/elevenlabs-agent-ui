@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react"
+import { motion } from "motion/react"
 import LiquidGlass from "liquid-glass-react"
 import type { Status } from "@elevenlabs/react"
 
@@ -229,20 +230,41 @@ export function ConversationWidget() {
                         description="Der Chat startet automatisch. Tipp einfach los."
                       />
                     ) : (
-                      messages.map((m) => (
-                        <Message key={m.id} from={m.from}>
-                          <MessageAvatar
-                            name={m.from === "user" ? "DU" : "AI"}
-                          />
-                          <MessageContent>
-                            {m.from === "assistant" ? (
-                              <Response>{m.text}</Response>
-                            ) : (
-                              <p className="whitespace-pre-wrap">{m.text}</p>
-                            )}
-                          </MessageContent>
-                        </Message>
-                      ))
+                      messages.map((m) => {
+                        const animateIn = m.from === "assistant"
+
+                        return (
+                          <motion.div
+                            key={m.id}
+                            layout="position"
+                            initial={
+                              animateIn
+                                ? { opacity: 0, y: 12, scale: 0.98 }
+                                : false
+                            }
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            transition={{
+                              duration: 0.22,
+                              ease: [0.22, 1, 0.36, 1],
+                            }}
+                          >
+                            <Message from={m.from}>
+                              <MessageAvatar
+                                name={m.from === "user" ? "DU" : "AI"}
+                              />
+                              <MessageContent>
+                                {m.from === "assistant" ? (
+                                  <Response>{m.text}</Response>
+                                ) : (
+                                  <p className="whitespace-pre-wrap">
+                                    {m.text}
+                                  </p>
+                                )}
+                              </MessageContent>
+                            </Message>
+                          </motion.div>
+                        )
+                      })
                     )}
                   </ConversationContent>
                   <ConversationScrollButton />
