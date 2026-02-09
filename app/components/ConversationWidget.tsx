@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/message"
 import { Response } from "@/components/ui/response"
 import { ConversationBar } from "@/components/ui/conversation-bar"
+import { ShimmeringText } from "@/components/ui/shimmering-text"
 
 const DEFAULT_AGENT_ID = "agent_1901kh130f0bexrsmn6pc0ejn8g0"
 
@@ -34,6 +35,7 @@ type UiMessage = {
   from: "user" | "assistant"
   text: string
   createdAt: number
+  isStreaming?: boolean
 }
 
 function useStableUserId() {
@@ -74,6 +76,12 @@ export function ConversationWidget() {
   const [status, setStatus] = useState<Status>("disconnected")
   const [messages, setMessages] = useState<UiMessage[]>([])
   const [lastError, setLastError] = useState<string | null>(null)
+  const assistantSeenRef = useRef(false)
+  const assistantQueueRef = useRef<Omit<UiMessage, "id">[]>([])
+  const streamingRef = useRef<{ id: string; target: string } | null>(null)
+  const [streaming, setStreaming] = useState<{ id: string; target: string } | null>(
+    null
+  )
 
   const firstAssistantMessageId = useMemo(() => {
     return messages.find((m) => m.from === "assistant")?.id ?? null
@@ -84,6 +92,7 @@ export function ConversationWidget() {
   )
 
   const addMessage = useCallback((m: Omit<UiMessage, "id">) => {
+    if (m.from === "assistant") assistantSeenRef.current = true
     setMessages((prev) => [
       ...prev,
       {
@@ -127,10 +136,84 @@ export function ConversationWidget() {
         return
       }
 
-      addMessage({ from: "assistant", text, createdAt: ts })
+      const queued = { from: "assistant" as const, text, createdAt: ts }
+
+      // Animate the agent's very first message like a real chat:
+      // 1) Insert an empty assistant bubble.
+      // 2) Reveal the text progressively (streaming effect).
+      if (!assistantSeenRef.current) {
+        assistantSeenRef.current = true
+        const id = `${ts}-${Math.random().toString(16).slice(2)}`
+        setMessages((prev) => [
+          ...prev,
+          { id, from: "assistant", text: "", createdAt: ts, isStreaming: true },
+        ])
+        const next = { id, target: text }
+        streamingRef.current = next
+        setStreaming(next)
+        return
+      }
+
+      // If we're currently "typing" the first assistant message, queue additional assistant messages.
+      if (streamingRef.current) {
+        assistantQueueRef.current.push(queued)
+        return
+      }
+
+      addMessage(queued)
     },
     [addMessage]
   )
+
+  useEffect(() => {
+    if (!streaming) return
+
+    const { id, target } = streaming
+    const total = target.length
+
+    // Tune for "chat typing": short messages feel typed; long messages complete faster.
+    const step =
+      total > 700 ? 8 : total > 420 ? 6 : total > 260 ? 4 : total > 160 ? 2 : 1
+    const intervalMs = total > 420 ? 14 : total > 260 ? 18 : 22
+    const startDelayMs = 260
+
+    let idx = 0
+    let intervalId: number | null = null
+
+    const timeoutId = window.setTimeout(() => {
+      intervalId = window.setInterval(() => {
+        idx = Math.min(total, idx + step)
+        const slice = target.slice(0, idx)
+
+        setMessages((prev) =>
+          prev.map((m) => (m.id === id ? { ...m, text: slice } : m))
+        )
+
+        if (idx < total) return
+
+        if (intervalId) window.clearInterval(intervalId)
+        intervalId = null
+
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === id ? { ...m, text: target, isStreaming: false } : m
+          )
+        )
+
+        streamingRef.current = null
+        setStreaming(null)
+
+        const queued = assistantQueueRef.current
+        assistantQueueRef.current = []
+        for (const item of queued) addMessage(item)
+      }, intervalMs)
+    }, startDelayMs)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+      if (intervalId) window.clearInterval(intervalId)
+    }
+  }, [addMessage, streaming])
 
   const statusLabel = useMemo(() => {
     switch (status) {
@@ -285,7 +368,26 @@ export function ConversationWidget() {
                             >
                               <MessageContent>
                                 {m.from === "assistant" ? (
-                                  <Response>{m.text}</Response>
+                                  m.isStreaming && m.text.length === 0 ? (
+                                    <div className="py-0.5">
+                                      <ShimmeringText
+                                        text="Agent tippt…"
+                                        duration={1.4}
+                                        repeatDelay={0.15}
+                                        className="text-sm"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <Response>{m.text}</Response>
+                                      {m.isStreaming ? (
+                                        <span
+                                          aria-hidden="true"
+                                          className="ml-1 inline-block h-4 w-1 translate-y-[2px] rounded-full bg-foreground/35 animate-pulse"
+                                        />
+                                      ) : null}
+                                    </>
+                                  )
                                 ) : (
                                   <p className="whitespace-pre-wrap">
                                     {m.text}
