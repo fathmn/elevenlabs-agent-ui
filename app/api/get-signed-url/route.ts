@@ -44,7 +44,7 @@ export async function GET() {
 
   if (!signedUrl) {
     return NextResponse.json(
-      { error: "Malformed response from ElevenLabs (missing signed_url)" },
+      { error: "Malformed response from chat provider (missing signed_url)" },
       { status: 502, headers: { "Cache-Control": "no-store" } }
     )
   }
@@ -54,4 +54,3 @@ export async function GET() {
     { headers: { "Cache-Control": "no-store" } }
   )
 }
-

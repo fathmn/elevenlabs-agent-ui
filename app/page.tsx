@@ -40,9 +40,6 @@ export default function Home() {
                 >
                   Zum Chat
                 </a>
-                <div className="text-sm text-foreground/70">
-                  Public agent · kein Backend · startet automatisch
-                </div>
               </div>
             </div>
 
@@ -79,29 +76,33 @@ export default function Home() {
             Info
           </h2>
           <div className="rounded-3xl border bg-background/15 p-5 backdrop-blur-md">
-            <div className="text-sm font-medium">Next.js + Vercel</div>
+            <div className="text-sm font-medium">Unabhängig</div>
             <p className="mt-2 text-sm leading-6 text-foreground/70">
-              App Router, TypeScript, Tailwind. Deployments laufen automatisch.
+              Neutral und ohne Anbieter-Bias: wir finden Weiterbildungen, die zu
+              deinen Zielen passen.
             </p>
           </div>
           <div className="rounded-3xl border bg-background/15 p-5 backdrop-blur-md">
-            <div className="text-sm font-medium">ElevenLabs UI</div>
+            <div className="text-sm font-medium">100% kostenlos</div>
             <p className="mt-2 text-sm leading-6 text-foreground/70">
-              Komponenten liegen lokal im Repo (shadcn-style) und sind
-              anpassbar.
+              Komplett kostenlos und unverbindlich. Du bekommst passende
+              Angebote ohne Verpflichtung.
             </p>
           </div>
           <div className="rounded-3xl border bg-background/15 p-5 backdrop-blur-md">
-            <div className="text-sm font-medium">Sichere Defaults</div>
+            <div className="text-sm font-medium">
+              &gt;2.500 zertifizierte Anbieter
+            </div>
             <p className="mt-2 text-sm leading-6 text-foreground/70">
-              Kein API Key im Client. Public Agent funktioniert ohne Backend.
+              Zugriff auf eine breite Auswahl an zertifizierten Anbietern und
+              vielen Weiterbildungen.
             </p>
           </div>
         </section>
 
         <footer className="mt-12 text-xs text-foreground/60">
-          HTTPS ist notwendig für manche Browser-Media-Features; Vercel liefert
-          das automatisch.
+          GenauMeinKurs ist ein kostenloser und unabhängiger Suchagent für
+          Weiterbildungen.
         </footer>
       </main>
     </div>

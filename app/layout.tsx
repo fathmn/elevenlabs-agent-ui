@@ -31,8 +31,8 @@ const nohemi = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "ElevenLabs Agent UI",
-  description: "Minimal Next.js UI to start an ElevenLabs Agent conversation",
+  title: "GenauMeinKurs",
+  description: "Kostenloser und unabhaengiger Suchagent fuer Weiterbildungen",
 };
 
 export default function RootLayout({

@@ -357,10 +357,10 @@ export function ConversationWidget() {
             <header className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
               <div className="space-y-0.5">
                 <div className="text-sm font-medium leading-5">
-                  ElevenLabs Chat
+                  GenauMeinKurs Chat
                 </div>
                 <div className="text-muted-foreground text-xs leading-4">
-                  Public agent · auto-connected
+                  Kostenlos · unverbindlich · startet automatisch
                 </div>
               </div>
               <StatusPill status={statusLabel} />
