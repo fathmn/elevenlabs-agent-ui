@@ -117,6 +117,15 @@ const AnimationComponent: React.FC<{
   per: 'line' | 'word' | 'char';
   segmentWrapperClassName?: string;
 }> = React.memo(({ segment, variants, per, segmentWrapperClassName }) => {
+  // When we split by whitespace, spaces become their own segments.
+  // Rendering them as `inline-block whitespace-pre` can cause a "hanging indent" when a line wrap
+  // happens right before the space (the space box gets pushed to the next line).
+  // Render pure-whitespace segments as normal inline text so the browser can collapse it at line
+  // boundaries, while keeping the animation for non-whitespace chars/words identical.
+  if (/^\s+$/.test(segment)) {
+    return <span aria-hidden='true'>{segment}</span>;
+  }
+
   const content =
     per === 'line' ? (
       <motion.span variants={variants} className='block'>
