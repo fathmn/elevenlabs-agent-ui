@@ -222,28 +222,28 @@ export function ConversationWidget() {
     const { id, target } = streaming
     const total = target.length
 
-    // Slower, more "human" typing: small chunks + punctuation pauses.
+    // Slightly faster, "human" typing: small chunks + punctuation pauses.
     // Still accelerates for very long messages so we don't block the chat for ages.
     const step =
       total > 1_200 ? 6 : total > 800 ? 4 : total > 420 ? 3 : total > 260 ? 2 : 1
-    // Make short first replies noticeably slower, but keep longer texts reasonable.
+    // Keep short first replies readable, but don't drag the interaction.
     const baseMsPerChar =
       total <= 12
-        ? 220
+        ? 70
         : total <= 40
-          ? 170
+          ? 55
           : total <= 120
-            ? 130
+            ? 42
             : total <= 260
-              ? 110
+              ? 36
               : total <= 420
-                ? 85
+                ? 30
                 : total <= 800
-                  ? 60
+                  ? 22
                   : total <= 1_200
-                    ? 48
-                    : 42
-    const startDelayMs = 1_050
+                    ? 18
+                    : 16
+    const startDelayMs = 220
 
     let idx = 0
     let timeoutId: number | null = null
@@ -275,11 +275,11 @@ export function ConversationWidget() {
       const lastChar = slice.at(-1) ?? ""
       const punctuationPause =
         lastChar === "\n"
-          ? 320
+          ? 120
           : ".!?".includes(lastChar)
-            ? 620
+            ? 240
             : ",;:".includes(lastChar)
-              ? 320
+              ? 120
               : 0
 
       const nextDelay = baseMsPerChar * step + punctuationPause
@@ -311,15 +311,15 @@ export function ConversationWidget() {
   return (
     <div
       ref={mouseContainerRef}
-      className="relative h-[70dvh] min-h-[460px] w-full overflow-hidden sm:min-h-[520px]"
+      className="relative isolate h-[70dvh] min-h-[460px] w-full overflow-hidden rounded-[32px] shadow-[0_32px_90px_rgba(0,0,0,0.16)] sm:min-h-[520px]"
     >
       <LiquidGlass
         mouseContainer={mouseContainerRef}
         mode="standard"
-        displacementScale={100}
-        blurAmount={1.0}
-        saturation={140}
-        aberrationIntensity={0}
+        displacementScale={80}
+        blurAmount={0.25}
+        saturation={155}
+        aberrationIntensity={1.6}
         elasticity={0}
         cornerRadius={32}
         overLight={false}
@@ -351,7 +351,7 @@ export function ConversationWidget() {
           {/* Tint layer: LiquidGlass does the refraction; this adds legibility without global CSS overrides. */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-white/65"
+            className="pointer-events-none absolute inset-0 bg-white/55"
           />
           <div className="relative flex h-full w-full flex-col">
             <header className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
@@ -366,9 +366,9 @@ export function ConversationWidget() {
               <StatusPill status={statusLabel} />
             </header>
 
-            <div className="min-h-0 flex-1 px-3 pb-3">
-              <div className="bg-background/60 ring-foreground/15 flex h-full flex-col overflow-hidden rounded-2xl ring-1 backdrop-blur-sm">
-                <Conversation className="min-h-0">
+            <div className="min-h-0 flex-1 px-3 pb-4">
+              <div className="bg-background/60 ring-foreground/15 flex h-full flex-col overflow-hidden rounded-[32px] ring-1 backdrop-blur-sm">
+                <Conversation className="min-h-0 flex-1">
                   <StickToBottomBridge apiRef={stickApiRef} />
                   <ConversationContent className="space-y-1">
                     {messages.length === 0 ? (
@@ -387,48 +387,38 @@ export function ConversationWidget() {
                             <MessageAvatar
                               name={m.from === "user" ? "DU" : "AI"}
                             />
-                            <motion.div
-                              layout="position"
-                              initial={
-                                isAssistant
-                                  ? {
-                                      opacity: 0,
-                                      y: 18,
-                                      scale: 0.96,
-                                      filter: isFirstAssistant
-                                        ? "blur(10px)"
-                                        : "blur(6px)",
-                                    }
-                                  : false
-                              }
-                              animate={{
-                                opacity: 1,
-                                y: 0,
-                                scale: 1,
-                                filter: "blur(0px)",
-                              }}
-                              transition={
-                                isFirstAssistant
-                                  ? {
-                                      type: "spring",
-                                      stiffness: 320,
-                                      damping: 26,
-                                      mass: 0.8,
-                                    }
-                                  : {
-                                      duration: 0.18,
-                                      ease: [0.22, 1, 0.36, 1],
-                                    }
-                              }
-                              style={{
-                                transformOrigin:
-                                  m.from === "assistant" ? "0% 100%" : "100% 100%",
-                              }}
-                              className="will-change-transform"
-                            >
-                              <MessageContent>
-                                {m.from === "assistant" ? (
-                                  m.isStreaming && m.text.length === 0 ? (
+                            {isAssistant ? (
+                              <motion.div
+                                initial={{
+                                  opacity: 0,
+                                  scale: 0.98,
+                                  filter: isFirstAssistant
+                                    ? "blur(10px)"
+                                    : "blur(6px)",
+                                }}
+                                animate={{
+                                  opacity: 1,
+                                  scale: 1,
+                                  filter: "blur(0px)",
+                                }}
+                                transition={
+                                  isFirstAssistant
+                                    ? {
+                                        type: "spring",
+                                        stiffness: 320,
+                                        damping: 26,
+                                        mass: 0.8,
+                                      }
+                                    : {
+                                        duration: 0.18,
+                                        ease: [0.22, 1, 0.36, 1],
+                                      }
+                                }
+                                style={{ transformOrigin: "0% 100%" }}
+                                className="flex flex-1 min-w-0 will-change-transform"
+                              >
+                                <MessageContent>
+                                  {m.isStreaming && m.text.length === 0 ? (
                                     <div className="py-0.5">
                                       <ShimmeringText
                                         text="Agent tippt…"
@@ -447,14 +437,16 @@ export function ConversationWidget() {
                                         />
                                       ) : null}
                                     </>
-                                  )
-                                ) : (
-                                  <p className="whitespace-pre-wrap">
-                                    {m.text}
-                                  </p>
-                                )}
-                              </MessageContent>
-                            </motion.div>
+                                  )}
+                                </MessageContent>
+                              </motion.div>
+                            ) : (
+                              <div className="flex flex-1 min-w-0 justify-end">
+                                <MessageContent>
+                                  <p className="whitespace-pre-wrap">{m.text}</p>
+                                </MessageContent>
+                              </div>
+                            )}
                           </Message>
                         )
                       })
@@ -462,32 +454,31 @@ export function ConversationWidget() {
                   </ConversationContent>
                   <ConversationScrollButton />
                 </Conversation>
-              </div>
-            </div>
 
-            <div className="px-3 pb-4">
-              <ConversationBar
-                agentId={agentId}
-                userId={userId}
-                autoStart
-                textOnly
-                connectionType="websocket"
-                enableVoiceInput
-                onStatusChange={(s) => setStatus(s)}
-                onMessage={handleIncomingMessage}
-                onSendMessage={handleSendMessage}
-                onError={(err) => setLastError(err.message)}
-                className="px-4"
-              />
+                <div className="border-foreground/10 bg-background/20 border-t px-4 py-4 backdrop-blur-md">
+                  <ConversationBar
+                    agentId={agentId}
+                    userId={userId}
+                    autoStart
+                    textOnly
+                    connectionType="websocket"
+                    enableVoiceInput
+                    onStatusChange={(s) => setStatus(s)}
+                    onMessage={handleIncomingMessage}
+                    onSendMessage={handleSendMessage}
+                    onError={(err) => setLastError(err.message)}
+                  />
 
-              {lastError && (
-                <div className="mt-3 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm">
-                  <div className="font-medium">Error</div>
-                  <div className="text-muted-foreground break-words">
-                    {lastError}
-                  </div>
+                  {lastError && (
+                    <div className="mt-3 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm">
+                      <div className="font-medium">Error</div>
+                      <div className="text-muted-foreground break-words">
+                        {lastError}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </section>

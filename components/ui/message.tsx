@@ -17,7 +17,7 @@ export const Message = ({ className, from, ...props }: MessageProps) => (
     className={cn(
       "group flex w-full items-end gap-2 py-3",
       from === "user"
-        ? "is-user justify-end flex-row-reverse"
+        ? "is-user justify-start flex-row-reverse"
         : "is-assistant justify-start",
       className
     )}
@@ -26,17 +26,19 @@ export const Message = ({ className, from, ...props }: MessageProps) => (
 )
 
 const messageContentVariants = cva(
-  "is-user:dark flex flex-col gap-2 overflow-hidden rounded-lg text-sm",
+  "is-user:dark flex flex-col gap-2 overflow-hidden break-words rounded-lg text-sm",
   {
     variants: {
       variant: {
         contained: [
-          "max-w-[80%] px-4 py-3",
+          "px-4 py-3 group-[.is-user]:px-5",
+          "max-w-[80%]",
           "group-[.is-user]:bg-primary group-[.is-user]:text-primary-foreground",
           "group-[.is-assistant]:bg-secondary group-[.is-assistant]:text-foreground",
         ],
         flat: [
-          "group-[.is-user]:max-w-[80%] group-[.is-user]:bg-secondary group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground",
+          "group-[.is-user]:bg-secondary group-[.is-user]:px-5 group-[.is-user]:py-3 group-[.is-user]:text-foreground",
+          "group-[.is-user]:max-w-[80%]",
           "group-[.is-assistant]:text-foreground",
         ],
       },
