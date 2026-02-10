@@ -17,6 +17,12 @@
 /.next/
 /out/
 
+# local artifacts (screenshots, scratch output)
+/output/
+tmp-*.png
+ui-*.png
+playwright-*.png
+
 # production
 /build
 

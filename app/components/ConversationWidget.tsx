@@ -3,7 +3,6 @@
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -93,9 +92,6 @@ export function ConversationWidget() {
     process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || DEFAULT_AGENT_ID
 
   const mouseContainerRef = useRef<HTMLDivElement | null>(null)
-  const [panelSize, setPanelSize] = useState<{ width: number; height: number } | null>(
-    null
-  )
 
   const [status, setStatus] = useState<Status>("disconnected")
   const [messages, setMessages] = useState<UiMessage[]>([])
@@ -230,9 +226,24 @@ export function ConversationWidget() {
     // Still accelerates for very long messages so we don't block the chat for ages.
     const step =
       total > 1_200 ? 6 : total > 800 ? 4 : total > 420 ? 3 : total > 260 ? 2 : 1
+    // Make short first replies noticeably slower, but keep longer texts reasonable.
     const baseMsPerChar =
-      total > 800 ? 22 : total > 420 ? 30 : total > 260 ? 38 : 52
-    const startDelayMs = 520
+      total <= 12
+        ? 220
+        : total <= 40
+          ? 170
+          : total <= 120
+            ? 130
+            : total <= 260
+              ? 110
+              : total <= 420
+                ? 85
+                : total <= 800
+                  ? 60
+                  : total <= 1_200
+                    ? 48
+                    : 42
+    const startDelayMs = 1_050
 
     let idx = 0
     let timeoutId: number | null = null
@@ -264,11 +275,11 @@ export function ConversationWidget() {
       const lastChar = slice.at(-1) ?? ""
       const punctuationPause =
         lastChar === "\n"
-          ? 160
+          ? 320
           : ".!?".includes(lastChar)
-            ? 260
+            ? 620
             : ",;:".includes(lastChar)
-              ? 140
+              ? 320
               : 0
 
       const nextDelay = baseMsPerChar * step + punctuationPause
@@ -297,37 +308,10 @@ export function ConversationWidget() {
     }
   }, [status])
 
-  useLayoutEffect(() => {
-    const el = mouseContainerRef.current
-    if (!el) return
-
-    const update = () => {
-      const rect = el.getBoundingClientRect()
-      const width = Math.round(rect.width)
-      const height = Math.round(rect.height)
-
-      setPanelSize((prev) => {
-        if (prev && prev.width === width && prev.height === height) return prev
-        return { width, height }
-      })
-    }
-
-    update()
-
-    if (typeof ResizeObserver === "undefined") {
-      window.addEventListener("resize", update)
-      return () => window.removeEventListener("resize", update)
-    }
-
-    const ro = new ResizeObserver(update)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
-
   return (
     <div
       ref={mouseContainerRef}
-      className="relative h-[70dvh] min-h-[460px] w-full sm:min-h-[520px]"
+      className="relative h-[70dvh] min-h-[460px] w-full overflow-hidden sm:min-h-[520px]"
     >
       <LiquidGlass
         mouseContainer={mouseContainerRef}
@@ -338,25 +322,36 @@ export function ConversationWidget() {
         aberrationIntensity={0}
         elasticity={0}
         cornerRadius={32}
+        overLight={false}
         padding="0px"
         style={{
           position: "absolute",
-          inset: 0,
+          width: "100%",
+          height: "100%",
+          // liquid-glass-react always applies a translate(-50%) transform internally.
+          // Anchoring the component at 50%/50% keeps the effect aligned with our container
+          // instead of drifting outside the grid column.
+          top: "50%",
+          left: "50%",
         }}
-        className="w-full"
+        className={cn(
+          "h-full w-full",
+          // liquid-glass-react renders a Fragment with multiple absolutely-positioned siblings.
+          // Its internal `.glass` element is `inline-flex` and size-to-content by default, which
+          // breaks containment (the chat can 'float' and scrolling won't work). Force it to fill
+          // this widget container.
+          "[&_.glass]:!flex [&_.glass]:!h-full [&_.glass]:!w-full [&_.glass]:!flex-col [&_.glass]:!items-stretch [&_.glass]:!gap-0",
+          // The library wraps `children` in an extra div; it also must stretch.
+          "[&_.glass>div]:h-full [&_.glass>div]:w-full [&_.glass>div]:flex [&_.glass>div]:flex-col"
+        )}
       >
         <section
-          className="relative flex flex-col text-sm text-foreground [text-shadow:none]"
-          style={
-            panelSize
-              ? { width: `${panelSize.width}px`, height: `${panelSize.height}px` }
-              : undefined
-          }
+          className="relative flex h-full w-full flex-col text-sm text-foreground [text-shadow:none]"
         >
           {/* Tint layer: LiquidGlass does the refraction; this adds legibility without global CSS overrides. */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-white/55"
+            className="pointer-events-none absolute inset-0 bg-white/65"
           />
           <div className="relative flex h-full w-full flex-col">
             <header className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
@@ -482,7 +477,7 @@ export function ConversationWidget() {
                 onMessage={handleIncomingMessage}
                 onSendMessage={handleSendMessage}
                 onError={(err) => setLastError(err.message)}
-                className="px-2"
+                className="px-4"
               />
 
               {lastError && (
