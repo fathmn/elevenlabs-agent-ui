@@ -7,10 +7,12 @@ import {
   useMemo,
   useRef,
   useState,
+  type MutableRefObject,
 } from "react"
 import { motion } from "motion/react"
 import LiquidGlass from "liquid-glass-react"
 import type { Status } from "@elevenlabs/react"
+import { useStickToBottomContext, type ScrollToBottom } from "use-stick-to-bottom"
 
 import { cn } from "@/lib/utils"
 import {
@@ -63,6 +65,28 @@ function useStableUserId() {
   return userId
 }
 
+type StickToBottomApi = {
+  scrollToBottom: ScrollToBottom
+  isAtBottom: boolean
+}
+
+function StickToBottomBridge({
+  apiRef,
+}: {
+  apiRef: MutableRefObject<StickToBottomApi | null>
+}) {
+  const { isAtBottom, scrollToBottom } = useStickToBottomContext()
+
+  useEffect(() => {
+    apiRef.current = { isAtBottom, scrollToBottom }
+    return () => {
+      apiRef.current = null
+    }
+  }, [apiRef, isAtBottom, scrollToBottom])
+
+  return null
+}
+
 export function ConversationWidget() {
   const userId = useStableUserId()
   const agentId =
@@ -76,6 +100,7 @@ export function ConversationWidget() {
   const [status, setStatus] = useState<Status>("disconnected")
   const [messages, setMessages] = useState<UiMessage[]>([])
   const [lastError, setLastError] = useState<string | null>(null)
+  const stickApiRef = useRef<StickToBottomApi | null>(null)
   const assistantSeenRef = useRef(false)
   const assistantQueueRef = useRef<Omit<UiMessage, "id">[]>([])
   const streamingRef = useRef<{ id: string; target: string } | null>(null)
@@ -165,35 +190,62 @@ export function ConversationWidget() {
     [addMessage]
   )
 
+  const lastMessage = messages.at(-1) ?? null
+  const lastMessageId = lastMessage?.id ?? null
+  const lastMessageFrom = lastMessage?.from ?? null
+  const lastMessageTextLen = lastMessage?.text.length ?? 0
+  const lastMessageStreaming = lastMessage?.isStreaming ?? false
+
+  useEffect(() => {
+    const api = stickApiRef.current
+    if (!api) return
+    if (!lastMessageId || !lastMessageFrom) return
+
+    // If the user sends a message while scrolled up, they should still see it immediately.
+    if (lastMessageFrom === "user") {
+      // `use-stick-to-bottom` supports the special value "instant" (even though its TS types
+      // currently don't include it) which jumps without the spring animation.
+      api.scrollToBottom(
+        "instant" as unknown as Parameters<ScrollToBottom>[0]
+      )
+      return
+    }
+
+    // Keep the view pinned to the bottom only if the user is already there.
+    if (api.isAtBottom) api.scrollToBottom()
+  }, [
+    lastMessageFrom,
+    lastMessageId,
+    lastMessageStreaming,
+    lastMessageTextLen,
+  ])
+
   useEffect(() => {
     if (!streaming) return
 
     const { id, target } = streaming
     const total = target.length
 
-    // Tune for "chat typing": short messages feel typed; long messages complete faster.
+    // Slower, more "human" typing: small chunks + punctuation pauses.
+    // Still accelerates for very long messages so we don't block the chat for ages.
     const step =
-      total > 700 ? 8 : total > 420 ? 6 : total > 260 ? 4 : total > 160 ? 2 : 1
-    const intervalMs = total > 420 ? 14 : total > 260 ? 18 : 22
-    const startDelayMs = 260
+      total > 1_200 ? 6 : total > 800 ? 4 : total > 420 ? 3 : total > 260 ? 2 : 1
+    const baseMsPerChar =
+      total > 800 ? 22 : total > 420 ? 30 : total > 260 ? 38 : 52
+    const startDelayMs = 520
 
     let idx = 0
-    let intervalId: number | null = null
+    let timeoutId: number | null = null
 
-    const timeoutId = window.setTimeout(() => {
-      intervalId = window.setInterval(() => {
-        idx = Math.min(total, idx + step)
-        const slice = target.slice(0, idx)
+    const tick = () => {
+      idx = Math.min(total, idx + step)
+      const slice = target.slice(0, idx)
 
-        setMessages((prev) =>
-          prev.map((m) => (m.id === id ? { ...m, text: slice } : m))
-        )
+      setMessages((prev) =>
+        prev.map((m) => (m.id === id ? { ...m, text: slice } : m))
+      )
 
-        if (idx < total) return
-
-        if (intervalId) window.clearInterval(intervalId)
-        intervalId = null
-
+      if (idx >= total) {
         setMessages((prev) =>
           prev.map((m) =>
             m.id === id ? { ...m, text: target, isStreaming: false } : m
@@ -206,12 +258,27 @@ export function ConversationWidget() {
         const queued = assistantQueueRef.current
         assistantQueueRef.current = []
         for (const item of queued) addMessage(item)
-      }, intervalMs)
-    }, startDelayMs)
+        return
+      }
+
+      const lastChar = slice.at(-1) ?? ""
+      const punctuationPause =
+        lastChar === "\n"
+          ? 160
+          : ".!?".includes(lastChar)
+            ? 260
+            : ",;:".includes(lastChar)
+              ? 140
+              : 0
+
+      const nextDelay = baseMsPerChar * step + punctuationPause
+      timeoutId = window.setTimeout(tick, nextDelay)
+    }
+
+    timeoutId = window.setTimeout(tick, startDelayMs)
 
     return () => {
-      window.clearTimeout(timeoutId)
-      if (intervalId) window.clearInterval(intervalId)
+      if (timeoutId) window.clearTimeout(timeoutId)
     }
   }, [addMessage, streaming])
 
@@ -274,10 +341,7 @@ export function ConversationWidget() {
         padding="0px"
         style={{
           position: "absolute",
-          top: "50%",
-          left: "50%",
-          width: "100%",
-          height: "100%",
+          inset: 0,
         }}
         className="w-full"
       >
@@ -308,8 +372,9 @@ export function ConversationWidget() {
             </header>
 
             <div className="min-h-0 flex-1 px-3 pb-3">
-              <div className="bg-background/60 ring-foreground/15 h-full overflow-hidden rounded-2xl ring-1 backdrop-blur-sm">
+              <div className="bg-background/60 ring-foreground/15 flex h-full flex-col overflow-hidden rounded-2xl ring-1 backdrop-blur-sm">
                 <Conversation className="min-h-0">
+                  <StickToBottomBridge apiRef={stickApiRef} />
                   <ConversationContent className="space-y-1">
                     {messages.length === 0 ? (
                       <ConversationEmptyState
