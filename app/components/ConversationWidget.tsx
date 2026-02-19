@@ -89,10 +89,12 @@ function StickToBottomBridge({
 
 export function ConversationWidget() {
   const userId = useStableUserId()
-  const agentId =
-    process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || DEFAULT_AGENT_ID
-  const branchId =
-    process.env.NEXT_PUBLIC_ELEVENLABS_BRANCH_ID || DEFAULT_BRANCH_ID
+  const envAgentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID
+  const envBranchId = process.env.NEXT_PUBLIC_ELEVENLABS_BRANCH_ID
+  const agentId = envAgentId || DEFAULT_AGENT_ID
+  const branchId = envAgentId
+    ? envBranchId
+    : envBranchId || DEFAULT_BRANCH_ID
 
   const mouseContainerRef = useRef<HTMLDivElement | null>(null)
 
