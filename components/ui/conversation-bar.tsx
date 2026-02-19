@@ -16,6 +16,11 @@ export interface ConversationBarProps {
   agentId: string
 
   /**
+   * Optional ElevenLabs Branch ID. When set, websocket sessions target this branch.
+   */
+  branchId?: string
+
+  /**
    * Optional user ID (your customer id) to be attached to the session.
    */
   userId?: string
@@ -108,10 +113,18 @@ function getIndex(value: unknown, index: number): unknown {
   return undefined
 }
 
+function buildWebSocketConversationUrl(agentId: string, branchId: string): string {
+  const url = new URL("wss://api.elevenlabs.io/v1/convai/conversation")
+  url.searchParams.set("agent_id", agentId)
+  url.searchParams.set("branch_id", branchId)
+  return url.toString()
+}
+
 export const ConversationBar = React.forwardRef<HTMLDivElement, ConversationBarProps>(
   (
     {
       agentId,
+      branchId,
       userId,
       autoStart = true,
       textOnly = true,
@@ -177,6 +190,16 @@ export const ConversationBar = React.forwardRef<HTMLDivElement, ConversationBarP
       }
 
       try {
+        const trimmedBranchId = branchId?.trim()
+        if (connectionType === "websocket" && trimmedBranchId) {
+          await conversation.startSession({
+            signedUrl: buildWebSocketConversationUrl(agentId, trimmedBranchId),
+            connectionType: "websocket",
+            userId,
+          })
+          return
+        }
+
         await conversation.startSession({
           agentId,
           connectionType,
@@ -185,7 +208,7 @@ export const ConversationBar = React.forwardRef<HTMLDivElement, ConversationBarP
       } catch (err) {
         onError?.(normalizeError(err))
       }
-    }, [agentId, connectionType, conversation, onError, userId])
+    }, [agentId, branchId, connectionType, conversation, onError, userId])
 
     const endSession = React.useCallback(async () => {
       if (conversation.status === "disconnected" || conversation.status === "disconnecting") {

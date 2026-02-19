@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic"
 export async function GET() {
   const apiKey = process.env.ELEVENLABS_API_KEY
   const agentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID
+  const branchId = process.env.NEXT_PUBLIC_ELEVENLABS_BRANCH_ID
 
   if (!apiKey) {
     return NextResponse.json(
@@ -24,6 +25,7 @@ export async function GET() {
     "https://api.elevenlabs.io/v1/convai/conversation/token"
   )
   url.searchParams.set("agent_id", agentId)
+  if (branchId) url.searchParams.set("branch_id", branchId)
 
   const res = await fetch(url, {
     headers: {

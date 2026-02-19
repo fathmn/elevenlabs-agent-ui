@@ -46,7 +46,7 @@ Voice/mic is optional and only requested if the user uses the voice button (brow
 
 ### Public agent (no backend required)
 
-Nothing to configure; it falls back to the default agent id in `app/components/ConversationWidget.tsx`.
+Nothing to configure; it falls back to the default agent/branch in `app/components/ConversationWidget.tsx`.
 
 ### Private agent (recommended for production)
 
@@ -55,6 +55,7 @@ Set environment variables (locally in `.env.local`, on Vercel in Project Setting
 ```bash
 ELEVENLABS_API_KEY=...
 NEXT_PUBLIC_ELEVENLABS_AGENT_ID=agent_...
+NEXT_PUBLIC_ELEVENLABS_BRANCH_ID=agtbrch_... # optional
 ```
 
 Server routes:
@@ -71,6 +72,7 @@ In production, protect these routes with your own app auth if you don’t want a
 2. Create a new Vercel Project and import the repo.
 3. If using a private agent, set `ELEVENLABS_API_KEY` in Vercel Project Settings.
 4. If using a private agent, set `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` in Vercel Project Settings.
-5. Deploy.
+5. Optional: set `NEXT_PUBLIC_ELEVENLABS_BRANCH_ID` if you want to pin a specific branch.
+6. Deploy.
 
 Mic and some browser speech APIs require a secure context (HTTPS); Vercel provides this automatically (localhost is also a secure context).

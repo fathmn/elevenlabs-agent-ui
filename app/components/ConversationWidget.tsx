@@ -29,7 +29,8 @@ import { Response } from "@/components/ui/response"
 import { ConversationBar } from "@/components/ui/conversation-bar"
 import { ShimmeringText } from "@/components/ui/shimmering-text"
 
-const DEFAULT_AGENT_ID = "agent_1901kh130f0bexrsmn6pc0ejn8g0"
+const DEFAULT_AGENT_ID = "agent_5501khtmqwn7eect7q4bsatgp4yw"
+const DEFAULT_BRANCH_ID = "agtbrch_6501khtmqyd3eqdtkh90wa6crmvt"
 
 type UiMessage = {
   id: string
@@ -90,6 +91,8 @@ export function ConversationWidget() {
   const userId = useStableUserId()
   const agentId =
     process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || DEFAULT_AGENT_ID
+  const branchId =
+    process.env.NEXT_PUBLIC_ELEVENLABS_BRANCH_ID || DEFAULT_BRANCH_ID
 
   const mouseContainerRef = useRef<HTMLDivElement | null>(null)
 
@@ -458,6 +461,7 @@ export function ConversationWidget() {
                 <div className="border-foreground/10 bg-background/20 border-t px-4 py-4 backdrop-blur-md">
                   <ConversationBar
                     agentId={agentId}
+                    branchId={branchId}
                     userId={userId}
                     autoStart
                     textOnly
