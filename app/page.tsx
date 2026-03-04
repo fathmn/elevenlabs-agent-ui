@@ -1,7 +1,6 @@
 import { LiquidEtherBackground } from "@/app/components/LiquidEtherBackground"
 import { BlurredNavbar } from "@/app/components/BlurredNavbar"
 import { ConversationWidget } from "@/app/components/ConversationWidget"
-import { TextEffect } from "@/components/motion-primitives/text-effect"
 
 export default function Home() {
   const heroTitle =
@@ -23,9 +22,7 @@ export default function Home() {
                 id="hero"
                 className="text-balance font-[var(--font-nohemi)] text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl"
               >
-                <TextEffect as="span" per="char" preset="fade">
-                  {heroTitle}
-                </TextEffect>
+                {heroTitle}
               </h1>
               <p className="text-pretty mt-4 text-base leading-7 text-foreground/75 sm:text-lg">
                 Wenn du ebenso lernen möchtest, wie man mit Künstlicher

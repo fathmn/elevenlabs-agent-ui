@@ -229,11 +229,11 @@ export function ConversationWidget() {
 
     // Make the "first message typing" effect noticeably faster:
     // cap total animation duration and increase chunk sizes for long replies.
-    const desiredDurationMs = Math.min(1_250, Math.max(240, 160 + total * 1.2))
-    const baseTickMs = 24
+    const desiredDurationMs = Math.min(1_650, Math.max(300, 200 + total * 1.45))
+    const baseTickMs = 28
     const ticks = Math.max(1, Math.ceil(desiredDurationMs / baseTickMs))
     const step = Math.max(1, Math.ceil(total / ticks))
-    const startDelayMs = 70
+    const startDelayMs = 105
 
     let idx = 0
     let timeoutId: number | null = null
@@ -266,11 +266,11 @@ export function ConversationWidget() {
       const punctuationPause =
         step <= 3
           ? lastChar === "\n"
-            ? 24
+            ? 36
             : ".!?".includes(lastChar)
-              ? 48
+              ? 72
               : ",;:".includes(lastChar)
-                ? 28
+                ? 42
                 : 0
           : 0
 
@@ -303,7 +303,7 @@ export function ConversationWidget() {
   return (
     <div
       ref={mouseContainerRef}
-      className="relative isolate h-[70dvh] min-h-[460px] w-full overflow-hidden rounded-[32px] shadow-[0_32px_90px_rgba(0,0,0,0.16)] sm:min-h-[520px]"
+      className="relative isolate h-[74dvh] min-h-[500px] w-full overflow-hidden rounded-[32px] shadow-[0_32px_90px_rgba(0,0,0,0.16)] sm:h-[70dvh] sm:min-h-[520px]"
     >
       <LiquidGlass
         mouseContainer={mouseContainerRef}
@@ -409,7 +409,7 @@ export function ConversationWidget() {
                                 style={{ transformOrigin: "0% 100%" }}
                                 className="flex flex-1 min-w-0 will-change-transform"
                               >
-                                <MessageContent>
+                                <MessageContent className="max-w-[92%] sm:max-w-[88%]">
                                   {m.isStreaming && m.text.length === 0 ? (
                                     <div className="py-0.5">
                                       <ShimmeringText
@@ -455,7 +455,8 @@ export function ConversationWidget() {
                     autoStart
                     textOnly
                     connectionType="websocket"
-                    enableVoiceInput
+                    enableVoiceInput={false}
+                    showConnectionControl={false}
                     onStatusChange={(s) => setStatus(s)}
                     onMessage={handleIncomingMessage}
                     onSendMessage={handleSendMessage}

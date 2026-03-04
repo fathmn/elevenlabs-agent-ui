@@ -50,9 +50,15 @@ export interface ConversationBarProps {
   /**
    * Enable optional voice dictation (browser speech recognition).
    * This is separate from ElevenLabs' voice conversations.
-   * @default true
+   * @default false
    */
   enableVoiceInput?: boolean
+
+  /**
+   * Show connect/disconnect control button.
+   * @default false
+   */
+  showConnectionControl?: boolean
 
   className?: string
   placeholder?: string
@@ -133,7 +139,8 @@ export const ConversationBar = React.forwardRef<HTMLDivElement, ConversationBarP
       autoStart = true,
       textOnly = true,
       connectionType = "websocket",
-      enableVoiceInput = true,
+      enableVoiceInput = false,
+      showConnectionControl = false,
       className,
       placeholder = "Schreibe eine Nachricht…",
       onStatusChange,
@@ -516,36 +523,38 @@ export const ConversationBar = React.forwardRef<HTMLDivElement, ConversationBarP
 
     return (
       <div ref={ref} className={cn("flex w-full items-end gap-2", className)}>
-        <div className="flex h-11 items-center gap-2 px-1">
-          <span className={cn("size-2 rounded-full", statusDotClass)} />
-          {isConnected ? (
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="h-9 w-9"
-              onClick={() => void endSession()}
-              disabled={isDisconnecting}
-              aria-label="Disconnect"
-              title="Disconnect"
-            >
-              <SquareIcon className="size-4" />
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="h-9 w-9"
-              onClick={() => void startSession()}
-              disabled={isConnecting || isDisconnecting}
-              aria-label="Reconnect"
-              title="Reconnect"
-            >
-              <RotateCcwIcon className="size-4" />
-            </Button>
-          )}
-        </div>
+        {showConnectionControl && (
+          <div className="flex h-11 items-center gap-2 px-1">
+            <span className={cn("size-2 rounded-full", statusDotClass)} />
+            {isConnected ? (
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="h-9 w-9"
+                onClick={() => void endSession()}
+                disabled={isDisconnecting}
+                aria-label="Disconnect"
+                title="Disconnect"
+              >
+                <SquareIcon className="size-4" />
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="h-9 w-9"
+                onClick={() => void startSession()}
+                disabled={isConnecting || isDisconnecting}
+                aria-label="Reconnect"
+                title="Reconnect"
+              >
+                <RotateCcwIcon className="size-4" />
+              </Button>
+            )}
+          </div>
+        )}
 
         {enableVoiceInput && (
           <VoiceButton
