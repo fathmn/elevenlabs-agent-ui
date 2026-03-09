@@ -381,9 +381,7 @@ export function ConversationWidget() {
                         const isFirstAssistant =
                           isAssistant && m.id === firstAssistantMessageId
                         const assistantParts =
-                          isAssistant && !m.isStreaming
-                            ? splitAssistantMessage(m.text)
-                            : [m.text]
+                          isAssistant ? splitAssistantMessage(m.text) : [m.text]
 
                         return (
                           <Message key={m.id} from={m.from}>
