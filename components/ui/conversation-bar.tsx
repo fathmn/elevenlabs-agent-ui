@@ -1,7 +1,11 @@
 "use client"
 
 import * as React from "react"
-import { type Status, useConversation } from "@elevenlabs/react"
+import {
+  type DisconnectionDetails,
+  type Status,
+  useConversation,
+} from "@elevenlabs/react"
 import { ArrowUpIcon, MicIcon, RotateCcwIcon, SquareIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -11,7 +15,40 @@ import { VoiceButton, type VoiceButtonState } from "@/components/ui/voice-button
 
 const RECONNECT_BASE_DELAY_MS = 900
 const RECONNECT_MAX_DELAY_MS = 12_000
-const USER_ACTIVITY_PING_MS = 25_000
+const DEFAULT_USER_ACTIVITY_PING_MS = 25_000
+const MIN_USER_ACTIVITY_PING_MS = 5_000
+const MAX_USER_ACTIVITY_PING_MS = 120_000
+
+function parseIntervalMs(
+  rawValue: string | undefined,
+  fallback: number,
+  min: number,
+  max: number
+): number {
+  if (!rawValue) return fallback
+  const value = Number(rawValue)
+  if (!Number.isFinite(value)) return fallback
+  const rounded = Math.round(value)
+  if (rounded < min || rounded > max) return fallback
+  return rounded
+}
+
+const USER_ACTIVITY_PING_MS = parseIntervalMs(
+  process.env.NEXT_PUBLIC_ELEVENLABS_USER_ACTIVITY_PING_MS,
+  DEFAULT_USER_ACTIVITY_PING_MS,
+  MIN_USER_ACTIVITY_PING_MS,
+  MAX_USER_ACTIVITY_PING_MS
+)
+
+function isAgentTimeoutDisconnect(details: DisconnectionDetails): boolean {
+  if (details.reason !== "agent") return false
+  const closeReason =
+    typeof details.closeReason === "string" ? details.closeReason : ""
+
+  return /timeout|max[_\s-]?duration|time[_\s-]?limit|session_time_limit_exceeded/i.test(
+    closeReason
+  )
+}
 
 export interface ConversationBarProps {
   /**
@@ -65,7 +102,7 @@ export interface ConversationBarProps {
 
   onStatusChange?: (status: Status) => void
   onConnect?: (conversationId: string) => void
-  onDisconnect?: () => void
+  onDisconnect?: (details: DisconnectionDetails) => void
   onError?: (error: Error) => void
   onMessage?: (message: { source: "user" | "ai"; message: string }) => void
   onSendMessage?: (message: string) => void
@@ -195,10 +232,13 @@ export const ConversationBar = React.forwardRef<HTMLDivElement, ConversationBarP
         onConnect?.(conversationId)
       },
       onDisconnect: (details) => {
-        onDisconnect?.()
+        onDisconnect?.(details)
 
         if (manualStopRef.current || !shouldMaintainSessionRef.current) return
-        if (details.reason === "user" || details.reason === "agent") return
+        if (details.reason === "user") return
+        if (details.reason === "agent" && !isAgentTimeoutDisconnect(details)) {
+          return
+        }
 
         scheduleReconnect()
       },

@@ -56,6 +56,7 @@ Set environment variables (locally in `.env.local`, on Vercel in Project Setting
 ELEVENLABS_API_KEY=...
 NEXT_PUBLIC_ELEVENLABS_AGENT_ID=agent_...
 NEXT_PUBLIC_ELEVENLABS_BRANCH_ID=agtbrch_... # optional
+NEXT_PUBLIC_ELEVENLABS_USER_ACTIVITY_PING_MS=25000 # optional (5_000..120_000)
 ```
 
 Server routes:
