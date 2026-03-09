@@ -21,7 +21,7 @@ export default function Home() {
                 id="hero"
                 className="text-balance font-[var(--font-nohemi)] text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl"
               >
-                Finde die IT-Weiterbildung, die zu dir passt.
+                Du bist nicht sicher, welche IT-Weiterbildung zu dir passt? Sprich jetzt mit unserem KI-Berater&nbsp;&#x2B07;
               </h1>
               <Image
                 src="/hero-it.png"
