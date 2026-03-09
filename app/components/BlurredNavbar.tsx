@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { MenuIcon } from "lucide-react"
 
 export function BlurredNavbar() {
@@ -5,13 +6,15 @@ export function BlurredNavbar() {
     <header className="fixed inset-x-0 top-0 z-20">
       <div className="mx-auto w-full max-w-6xl px-4 pt-4">
         <div className="flex h-14 items-center justify-between gap-3 rounded-3xl border bg-background/30 px-4 shadow-sm backdrop-blur-md">
-          <a href="#" className="flex items-center gap-3">
-            <span className="inline-flex size-9 items-center justify-center rounded-2xl bg-foreground text-xs font-semibold tracking-wide text-background">
-              GMK
-            </span>
-            <span className="font-[var(--font-nohemi)] text-sm font-semibold tracking-tight">
-              GENAUMEINKURS
-            </span>
+          <a href="#" className="flex items-center">
+            <Image
+              src="/logo.png"
+              alt="GenauMeinKurs"
+              width={180}
+              height={40}
+              className="h-8 w-auto"
+              priority
+            />
           </a>
 
           <div className="flex items-center gap-2">
@@ -20,19 +23,19 @@ export function BlurredNavbar() {
                 href="#chat"
                 className="rounded-2xl px-3 py-2 text-foreground/80 transition-colors hover:bg-background/50 hover:text-foreground"
               >
-                Chat
+                Beratung
               </a>
               <a
                 href="#about"
                 className="rounded-2xl px-3 py-2 text-foreground/80 transition-colors hover:bg-background/50 hover:text-foreground"
               >
-                Info
+                Vorteile
               </a>
               <a
                 href="#chat"
                 className="ml-2 inline-flex h-10 items-center justify-center rounded-2xl bg-foreground px-4 text-sm font-medium text-background transition-colors hover:bg-foreground/90"
               >
-                Zum Chat
+                Kostenlos starten
               </a>
             </nav>
 
@@ -46,19 +49,19 @@ export function BlurredNavbar() {
                   href="#chat"
                   className="block rounded-2xl px-3 py-2 text-sm text-foreground/85 hover:bg-background/60 hover:text-foreground"
                 >
-                  Chat
+                  Beratung
                 </a>
                 <a
                   href="#about"
                   className="block rounded-2xl px-3 py-2 text-sm text-foreground/85 hover:bg-background/60 hover:text-foreground"
                 >
-                  Info
+                  Vorteile
                 </a>
                 <a
                   href="#chat"
                   className="mt-1 block rounded-2xl bg-foreground px-3 py-2 text-center text-sm font-medium text-background"
                 >
-                  Zum Chat
+                  Kostenlos starten
                 </a>
               </div>
             </details>

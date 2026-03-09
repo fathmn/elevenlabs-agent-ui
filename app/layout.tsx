@@ -31,8 +31,9 @@ const nohemi = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "GenauMeinKurs",
-  description: "Kostenloser und unabhaengiger Suchagent fuer Weiterbildungen",
+  title: "IT-Weiterbildung finden | GenauMeinKurs",
+  description:
+    "Finde die passende Entwicklung & IT Weiterbildung – 100 % kostenlos mit Bildungsgutschein. Über 2.500 zertifizierte Anbieter, neutrale Beratung.",
 };
 
 export default function RootLayout({

@@ -303,7 +303,7 @@ export function ConversationWidget() {
   return (
     <div
       ref={mouseContainerRef}
-      className="relative isolate h-[74dvh] min-h-[500px] w-full overflow-hidden rounded-[32px] shadow-[0_32px_90px_rgba(0,0,0,0.16)] sm:h-[70dvh] sm:min-h-[520px]"
+      className="relative isolate h-[74dvh] min-h-[500px] w-full overflow-hidden rounded-[32px] shadow-[0_32px_90px_rgba(0,0,0,0.16)] sm:h-[70dvh] sm:min-h-[520px] lg:h-full lg:min-h-[600px]"
     >
       <LiquidGlass
         mouseContainer={mouseContainerRef}
@@ -378,6 +378,7 @@ export function ConversationWidget() {
                           <Message key={m.id} from={m.from}>
                             <MessageAvatar
                               name={m.from === "user" ? "DU" : "AI"}
+                              src={m.from === "user" ? undefined : "/agent.jpg"}
                             />
                             {isAssistant ? (
                               <motion.div
@@ -409,7 +410,7 @@ export function ConversationWidget() {
                                 style={{ transformOrigin: "0% 100%" }}
                                 className="flex flex-1 min-w-0 will-change-transform"
                               >
-                                <MessageContent className="max-w-[92%] sm:max-w-[88%]">
+                                <MessageContent className="max-w-[96%] sm:max-w-[92%]">
                                   {m.isStreaming && m.text.length === 0 ? (
                                     <div className="py-0.5">
                                       <ShimmeringText
