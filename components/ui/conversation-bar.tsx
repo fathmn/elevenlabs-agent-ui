@@ -617,9 +617,16 @@ export const ConversationBar = React.forwardRef<HTMLDivElement, ConversationBarP
           onChange={(e) => setTextInput(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => {
-            setTimeout(() => {
-              document.getElementById("chat")?.scrollIntoView({ block: "start", behavior: "smooth" })
-            }, 350)
+            const adjust = () => {
+              const vv = window.visualViewport
+              if (!vv) return
+              const chat = document.getElementById("chat")
+              if (!chat) return
+              const chatBottom = chat.getBoundingClientRect().bottom + window.scrollY
+              window.scrollTo({ top: Math.max(0, chatBottom - vv.height), behavior: "smooth" })
+            }
+            setTimeout(adjust, 400)
+            window.visualViewport?.addEventListener("resize", adjust, { once: true })
           }}
           placeholder={placeholder}
           rows={1}
