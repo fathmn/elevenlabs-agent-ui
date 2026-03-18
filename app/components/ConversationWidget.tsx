@@ -319,7 +319,7 @@ export function ConversationWidget() {
   return (
     <div
       ref={mouseContainerRef}
-      className="relative isolate h-[74dvh] min-h-[500px] w-full overflow-hidden rounded-[20px] shadow-[0_32px_90px_rgba(0,0,0,0.16)] sm:rounded-[32px] sm:h-[70dvh] sm:min-h-[520px] lg:h-full lg:min-h-[600px]"
+      className="relative isolate h-[74svh] min-h-[500px] w-full overflow-hidden rounded-[20px] shadow-[0_32px_90px_rgba(0,0,0,0.16)] sm:rounded-[32px] sm:h-[70svh] sm:min-h-[520px] lg:h-full lg:min-h-[600px]"
     >
       <LiquidGlass
         mouseContainer={mouseContainerRef}
@@ -375,7 +375,7 @@ export function ConversationWidget() {
             </header>
 
             <div className="min-h-0 flex-1 px-3 pb-4">
-              <div className="bg-background/60 ring-foreground/15 flex h-full flex-col overflow-hidden rounded-[32px] ring-1 backdrop-blur-sm">
+              <div className="bg-background/60 ring-foreground/15 flex h-full flex-col overflow-hidden rounded-[16px] ring-1 backdrop-blur-sm sm:rounded-[32px]">
                 <Conversation className="min-h-0 flex-1">
                   <StickToBottomBridge apiRef={stickApiRef} />
                   <ConversationContent className="space-y-1">
