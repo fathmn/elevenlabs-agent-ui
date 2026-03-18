@@ -12,7 +12,7 @@ export default function Home() {
       <main className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-10 pt-24 sm:pb-14 sm:pt-28">
         <section
           aria-labelledby="hero"
-          className="grid items-stretch gap-8 lg:grid-cols-[1fr_520px] lg:gap-8"
+          className="grid items-stretch gap-8 lg:grid-cols-[45fr_55fr] lg:gap-8"
         >
           <div className="flex flex-col gap-8 lg:contents">
             {/* H1 block */}
