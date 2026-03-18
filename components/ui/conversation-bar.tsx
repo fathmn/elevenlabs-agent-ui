@@ -97,6 +97,11 @@ export interface ConversationBarProps {
    */
   showConnectionControl?: boolean
 
+  /**
+   * Known data from a previous session (sessionStorage) to pass to the agent.
+   */
+  sessionData?: Record<string, string | undefined>
+
   className?: string
   placeholder?: string
 
@@ -178,6 +183,7 @@ export const ConversationBar = React.forwardRef<HTMLDivElement, ConversationBarP
       connectionType = "websocket",
       enableVoiceInput = false,
       showConnectionControl = false,
+      sessionData,
       className,
       placeholder = "Schreibe eine Nachricht…",
       onStatusChange,
@@ -200,6 +206,12 @@ export const ConversationBar = React.forwardRef<HTMLDivElement, ConversationBarP
     const manualStopRef = React.useRef(false)
     const shouldMaintainSessionRef = React.useRef(false)
     const startSessionRef = React.useRef<() => Promise<void>>(async () => {})
+    const sessionDataRef = React.useRef(sessionData)
+    const contextSentRef = React.useRef(false)
+
+    React.useEffect(() => {
+      sessionDataRef.current = sessionData
+    }, [sessionData])
 
     const clearReconnectTimer = React.useCallback(() => {
       if (reconnectTimeoutRef.current === null) return
@@ -289,11 +301,19 @@ export const ConversationBar = React.forwardRef<HTMLDivElement, ConversationBarP
       try {
         const trimmedBranchId = branchId?.trim()
 
+        // When we have session data from a previous conversation, suppress the
+        // default greeting so the agent can respond contextually instead.
+        const hasSessionContext = sessionDataRef.current && Object.values(sessionDataRef.current).some(Boolean)
+        const sessionOverrides = hasSessionContext
+          ? { agent: { firstMessage: "" } }
+          : undefined
+
         if (connectionType === "websocket" && trimmedBranchId) {
           await conversation.startSession({
             signedUrl: buildWebSocketConversationUrl(agentId, trimmedBranchId),
             connectionType: "websocket",
             userId,
+            ...(sessionOverrides && { overrides: sessionOverrides }),
           })
           return
         }
@@ -302,6 +322,7 @@ export const ConversationBar = React.forwardRef<HTMLDivElement, ConversationBarP
           agentId,
           connectionType,
           userId,
+          ...(sessionOverrides && { overrides: sessionOverrides }),
         })
       } catch (err) {
         onError?.(normalizeError(err))
@@ -430,6 +451,43 @@ export const ConversationBar = React.forwardRef<HTMLDivElement, ConversationBarP
 
       return () => {
         window.clearInterval(interval)
+      }
+    }, [conversation, conversation.status])
+
+    // Send known session data as contextual update after connection
+    React.useEffect(() => {
+      if (conversation.status === "connected" && !contextSentRef.current) {
+        const sd = sessionDataRef.current
+        if (sd && Object.values(sd).some(Boolean)) {
+          contextSentRef.current = true
+          const dataParts: string[] = []
+          if (sd.first_name) dataParts.push(`Name: ${sd.first_name}`)
+          if (sd.email) dataParts.push(`E-Mail: ${sd.email}`)
+          if (sd.career_goal) dataParts.push(`Karriereziel (career_goal): ${sd.career_goal}`)
+          if (sd.area_experience) dataParts.push(`Erfahrung (area_experience): ${sd.area_experience}`)
+          if (sd.last_job) dataParts.push(`Letzte Tätigkeit (last_job): ${sd.last_job}`)
+          if (sd.afa_contact) dataParts.push(`Arbeitsvermittler-Status (afa_contact): ${sd.afa_contact}`)
+          if (sd.german_level_ok) dataParts.push(`Deutschniveau B2+ (german_level_ok): ${sd.german_level_ok}`)
+          if (sd.qualified) dataParts.push(`Qualifiziert (qualified): ${sd.qualified}`)
+
+          let context = ""
+          if (dataParts.length > 0) {
+            context += `Folgende Daten sind aus einer früheren Sitzung bekannt: ${dataParts.join(", ")}.`
+          }
+          if (sd.last_agent_message) {
+            context += ` Letzte Agent-Nachricht: "${sd.last_agent_message}".`
+          }
+          if (sd.last_user_message) {
+            context += ` Letzte Nutzer-Nachricht: "${sd.last_user_message}".`
+          }
+          if (context) {
+            context += " Dies ist eine Fortsetzung des vorherigen Gesprächs. Begrüße den Nutzer NICHT erneut und stelle dich nicht nochmal vor. Überspringe alle Fragen, deren Antworten bereits vorliegen. Antworte direkt und kontextbezogen auf Basis der letzten Nachrichten."
+            conversation.sendContextualUpdate(context)
+          }
+        }
+      }
+      if (conversation.status === "disconnected") {
+        contextSentRef.current = false
       }
     }, [conversation, conversation.status])
 

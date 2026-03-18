@@ -47,6 +47,48 @@ function splitAssistantMessage(text: string): string[] {
     .filter(Boolean)
 }
 
+// ── Session data (sessionStorage) ──────────────────────────────────────
+const SESSION_KEY = "gmk_chat_data"
+
+type ChatSessionData = {
+  first_name?: string
+  email?: string
+  career_goal?: string
+  area_experience?: string
+  last_job?: string
+  afa_contact?: string
+  qualified?: string
+  german_level_ok?: string
+  last_user_message?: string
+  last_agent_message?: string
+}
+
+function loadSessionData(): ChatSessionData {
+  if (typeof window === "undefined") return {}
+  try {
+    return JSON.parse(sessionStorage.getItem(SESSION_KEY) || "{}")
+  } catch {
+    return {}
+  }
+}
+
+function persistSessionData(data: ChatSessionData) {
+  if (typeof window === "undefined") return
+  try {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(data))
+  } catch {}
+}
+
+const AGENT_QUESTION_PATTERNS: [RegExp, keyof ChatSessionData][] = [
+  [/wie ist dein name|wie hei[ßs]t du/i, "first_name"],
+  [/e-?mail|mail-?adresse/i, "email"],
+  [/zielberuf|welchen beruf.*anstrebst/i, "career_goal"],
+  [/bereich gearbeitet|erfahrung.*gesammelt/i, "area_experience"],
+  [/letzte.*tätigkeit|berufliche tätigkeit/i, "last_job"],
+  [/arbeitsvermittler.*zugestimmt/i, "afa_contact"],
+  [/b2.*oder höher|sprachniveau/i, "german_level_ok"],
+]
+
 function useStableUserId() {
   const key = "elevenlabs_user_id"
 
@@ -125,6 +167,13 @@ export function ConversationWidget() {
     null
   )
 
+  const [sessionData, setSessionData] = useState<ChatSessionData>(() => loadSessionData())
+  const pendingFieldRef = useRef<keyof ChatSessionData | null>(null)
+
+  useEffect(() => {
+    persistSessionData(sessionData)
+  }, [sessionData])
+
   const firstAssistantMessageId = useMemo(() => {
     return messages.find((m) => m.from === "assistant")?.id ?? null
   }, [messages])
@@ -149,6 +198,30 @@ export function ConversationWidget() {
       const trimmed = text.trim()
       if (!trimmed) return
 
+      // Extract session data from user response
+      const pending = pendingFieldRef.current
+      if (pending) {
+        pendingFieldRef.current = null
+        if (pending === "email") {
+          const match = trimmed.match(/[\w.+-]+@[\w.-]+\.\w+/)
+          if (match) {
+            setSessionData((prev) => ({ ...prev, email: match[0].toLowerCase(), last_user_message: trimmed }))
+          } else {
+            setSessionData((prev) => ({ ...prev, last_user_message: trimmed }))
+          }
+        } else {
+          setSessionData((prev) => ({ ...prev, [pending]: trimmed, last_user_message: trimmed }))
+        }
+      } else {
+        // Always check for email pattern in any message
+        const emailMatch = trimmed.match(/[\w.+-]+@[\w.-]+\.\w+/)
+        if (emailMatch) {
+          setSessionData((prev) => ({ ...prev, email: emailMatch[0].toLowerCase(), last_user_message: trimmed }))
+        } else {
+          setSessionData((prev) => ({ ...prev, last_user_message: trimmed }))
+        }
+      }
+
       const ts = Date.now()
       lastLocalUserMessageRef.current = { text: trimmed, ts }
 
@@ -165,6 +238,18 @@ export function ConversationWidget() {
     (msg: { source: "user" | "ai"; message: string }) => {
       const text = msg.message.trim()
       if (!text) return
+
+      // Detect agent questions for session data tracking + store last agent message
+      if (msg.source === "ai") {
+        setSessionData((prev) => ({ ...prev, last_agent_message: text }))
+        const lower = text.toLowerCase()
+        for (const [pattern, field] of AGENT_QUESTION_PATTERNS) {
+          if (pattern.test(lower)) {
+            pendingFieldRef.current = field
+            break
+          }
+        }
+      }
 
       const ts = Date.now()
 
@@ -478,6 +563,7 @@ export function ConversationWidget() {
                     agentId={agentId}
                     branchId={branchId}
                     userId={userId}
+                    sessionData={sessionData}
                     autoStart
                     textOnly
                     connectionType="websocket"
