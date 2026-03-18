@@ -617,8 +617,9 @@ export const ConversationBar = React.forwardRef<HTMLDivElement, ConversationBarP
           onChange={(e) => setTextInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
+          rows={1}
           className={cn(
-            "min-h-11 max-h-40 flex-1 resize-none rounded-2xl border-border/60 bg-background/40 px-4 py-3 text-sm shadow-none backdrop-blur-md",
+            "!min-h-11 max-h-40 flex-1 resize-none rounded-2xl border-border/60 bg-background/40 px-4 py-2.5 text-sm shadow-none backdrop-blur-md",
             "focus-visible:ring-0"
           )}
           disabled={isDisconnecting}
