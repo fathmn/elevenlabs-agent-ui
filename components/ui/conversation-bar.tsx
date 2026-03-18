@@ -616,10 +616,9 @@ export const ConversationBar = React.forwardRef<HTMLDivElement, ConversationBarP
           value={textInput}
           onChange={(e) => setTextInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          onFocus={(e) => {
-            const el = e.target as HTMLElement
+          onFocus={() => {
             setTimeout(() => {
-              el.scrollIntoView({ block: "center", behavior: "smooth" })
+              document.getElementById("chat")?.scrollIntoView({ block: "start", behavior: "smooth" })
             }, 350)
           }}
           placeholder={placeholder}
