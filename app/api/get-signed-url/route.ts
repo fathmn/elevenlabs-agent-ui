@@ -1,23 +1,83 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
+
+import {
+  consumeSignedUrlRateLimit,
+  getClientIp,
+  isTrustedRequestOrigin,
+} from "@/lib/chat-security"
 
 export const dynamic = "force-dynamic"
 
-export async function GET() {
-  const apiKey = process.env.ELEVENLABS_API_KEY
-  const agentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID
-  const branchId = process.env.NEXT_PUBLIC_ELEVENLABS_BRANCH_ID
+function json(
+  body: Record<string, string>,
+  init: {
+    status: number
+    headers?: HeadersInit
+  }
+) {
+  return NextResponse.json(body, {
+    status: init.status,
+    headers: {
+      "Cache-Control": "no-store",
+      ...init.headers,
+    },
+  })
+}
 
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "Missing ELEVENLABS_API_KEY" },
-      { status: 400, headers: { "Cache-Control": "no-store" } }
+function getChatConfig() {
+  const apiKey = process.env.ELEVENLABS_API_KEY
+  const agentId = process.env.ELEVENLABS_AGENT_ID
+  const branchId = process.env.ELEVENLABS_BRANCH_ID
+
+  return { apiKey, agentId, branchId }
+}
+
+export function GET() {
+  return json(
+    { error: "Method not allowed" },
+    { status: 405, headers: { Allow: "POST, OPTIONS" } }
+  )
+}
+
+export function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: "POST, OPTIONS",
+      "Cache-Control": "no-store",
+    },
+  })
+}
+
+export async function POST(request: NextRequest) {
+  if (!isTrustedRequestOrigin(request)) {
+    return json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  const clientIp = getClientIp(request)
+  const rateLimit = consumeSignedUrlRateLimit(`signed-url:${clientIp}`)
+  if (!rateLimit.allowed) {
+    return json(
+      { error: "Too many requests" },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(
+            Math.max(1, Math.ceil((rateLimit.resetAt - Date.now()) / 1_000))
+          ),
+          "X-RateLimit-Remaining": "0",
+          "X-RateLimit-Reset": String(rateLimit.resetAt),
+        },
+      }
     )
   }
 
-  if (!agentId) {
-    return NextResponse.json(
-      { error: "Missing NEXT_PUBLIC_ELEVENLABS_AGENT_ID" },
-      { status: 400, headers: { "Cache-Control": "no-store" } }
+  const { apiKey, agentId, branchId } = getChatConfig()
+
+  if (!apiKey || !agentId) {
+    return json(
+      { error: "Chat is temporarily unavailable" },
+      { status: 503 }
     )
   }
 
@@ -35,24 +95,27 @@ export async function GET() {
   })
 
   if (!res.ok) {
-    return NextResponse.json(
-      { error: "Failed to get signed URL" },
-      { status: res.status, headers: { "Cache-Control": "no-store" } }
-    )
+    return json({ error: "Failed to start chat session" }, { status: 502 })
   }
 
   const data = (await res.json()) as { signed_url?: string; signedUrl?: string }
   const signedUrl = data.signed_url ?? data.signedUrl
 
   if (!signedUrl) {
-    return NextResponse.json(
-      { error: "Malformed response from chat provider (missing signed_url)" },
-      { status: 502, headers: { "Cache-Control": "no-store" } }
+    return json(
+      { error: "Chat provider returned an invalid session" },
+      { status: 502 }
     )
   }
 
-  return NextResponse.json(
+  return json(
     { signedUrl },
-    { headers: { "Cache-Control": "no-store" } }
+    {
+      status: 200,
+      headers: {
+        "X-RateLimit-Remaining": String(rateLimit.remaining),
+        "X-RateLimit-Reset": String(rateLimit.resetAt),
+      },
+    }
   )
 }

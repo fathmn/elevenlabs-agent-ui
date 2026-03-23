@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type MutableRefObject,
 } from "react"
 import { motion } from "motion/react"
@@ -26,11 +27,8 @@ import {
   MessageContent,
 } from "@/components/ui/message"
 import { Response } from "@/components/ui/response"
-import { ConversationBar } from "@/components/ui/conversation-bar"
 import { ShimmeringText } from "@/components/ui/shimmering-text"
-
-const DEFAULT_AGENT_ID = "agent_5501khtmqwn7eect7q4bsatgp4yw"
-const DEFAULT_BRANCH_ID = "agtbrch_6501khtmqyd3eqdtkh90wa6crmvt"
+import { SecureConversationBar } from "@/app/components/SecureConversationBar"
 
 type UiMessage = {
   id: string
@@ -47,13 +45,46 @@ function splitAssistantMessage(text: string): string[] {
     .filter(Boolean)
 }
 
+function readLocalStorage(key: string) {
+  try {
+    return window.localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function writeLocalStorage(key: string, value: string) {
+  try {
+    window.localStorage.setItem(key, value)
+  } catch {
+    /* noop */
+  }
+}
+
+function subscribeToSmallViewport(callback: () => void) {
+  const mediaQuery = window.matchMedia("(max-width: 639px)")
+  mediaQuery.addEventListener("change", callback)
+
+  return () => {
+    mediaQuery.removeEventListener("change", callback)
+  }
+}
+
+function getSmallViewportSnapshot() {
+  return window.matchMedia("(max-width: 639px)").matches
+}
+
+function getSmallViewportServerSnapshot() {
+  return false
+}
+
 function useStableUserId() {
   const key = "elevenlabs_user_id"
 
   const [userId] = useState<string | undefined>(() => {
     if (typeof window === "undefined") return undefined
 
-    const existing = window.localStorage.getItem(key)
+    const existing = readLocalStorage(key)
     if (existing) return existing
 
     return typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -65,8 +96,8 @@ function useStableUserId() {
     if (!userId) return
     if (typeof window === "undefined") return
 
-    const existing = window.localStorage.getItem(key)
-    if (!existing) window.localStorage.setItem(key, userId)
+    const existing = readLocalStorage(key)
+    if (!existing) writeLocalStorage(key, userId)
   }, [key, userId])
 
   return userId
@@ -96,23 +127,14 @@ function StickToBottomBridge({
 
 export function ConversationWidget() {
   const userId = useStableUserId()
-  const envAgentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID
-  const envBranchId = process.env.NEXT_PUBLIC_ELEVENLABS_BRANCH_ID
-  const agentId = envAgentId || DEFAULT_AGENT_ID
-  const branchId = envAgentId
-    ? envBranchId
-    : envBranchId || DEFAULT_BRANCH_ID
 
   const mouseContainerRef = useRef<HTMLDivElement | null>(null)
-  const [glassRadius, setGlassRadius] = useState(32)
-
-  useEffect(() => {
-    const mql = window.matchMedia("(max-width: 639px)")
-    setGlassRadius(mql.matches ? 20 : 32)
-    const handler = (e: MediaQueryListEvent) => setGlassRadius(e.matches ? 20 : 32)
-    mql.addEventListener("change", handler)
-    return () => mql.removeEventListener("change", handler)
-  }, [])
+  const isSmallViewport = useSyncExternalStore(
+    subscribeToSmallViewport,
+    getSmallViewportSnapshot,
+    getSmallViewportServerSnapshot
+  )
+  const glassRadius = isSmallViewport ? 20 : 32
 
   const [status, setStatus] = useState<Status>("disconnected")
   const [messages, setMessages] = useState<UiMessage[]>([])
@@ -474,15 +496,9 @@ export function ConversationWidget() {
                 </Conversation>
 
                 <div className="border-foreground/10 bg-background/20 border-t px-4 py-4 backdrop-blur-md">
-                  <ConversationBar
-                    agentId={agentId}
-                    branchId={branchId}
+                  <SecureConversationBar
                     userId={userId}
                     autoStart
-                    textOnly
-                    connectionType="websocket"
-                    enableVoiceInput={false}
-                    showConnectionControl={false}
                     onStatusChange={(s) => setStatus(s)}
                     onMessage={handleIncomingMessage}
                     onSendMessage={handleSendMessage}

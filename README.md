@@ -44,36 +44,35 @@ pnpm dlx @elevenlabs/cli@latest components add speech-input
 The UI lives in `app/components/ConversationWidget.tsx` and is chat-first (auto-connects, text input via `ConversationBar`).
 Voice/mic is optional and only requested if the user uses the voice button (browser SpeechRecognition).
 
-### Public agent (no backend required)
-
-Nothing to configure; it falls back to the default agent/branch in `app/components/ConversationWidget.tsx`.
-
 ### Private agent (recommended for production)
 
 Set environment variables (locally in `.env.local`, on Vercel in Project Settings):
 
 ```bash
 ELEVENLABS_API_KEY=...
-NEXT_PUBLIC_ELEVENLABS_AGENT_ID=agent_...
-NEXT_PUBLIC_ELEVENLABS_BRANCH_ID=agtbrch_... # optional
+ELEVENLABS_AGENT_ID=agent_...
+ELEVENLABS_BRANCH_ID=agtbrch_... # optional
 NEXT_PUBLIC_ELEVENLABS_USER_ACTIVITY_PING_MS=25000 # optional (5_000..120_000)
+APP_ORIGIN=https://beratung.genaumeinkurs.de # optional, used for response headers
 ```
 
 Server routes:
 
 - `app/api/get-signed-url/route.ts`: returns a `signedUrl` for WebSocket connections
-- `app/api/conversation-token/route.ts`: returns a `token` (included for completeness; not required for the public-agent chat flow)
+- `app/api/conversation-token/route.ts`: intentionally disabled to avoid unused token surface
 
-Important: the API key stays server-side (never exposed to the client).
-In production, protect these routes with your own app auth if you don’t want anonymous users to start sessions.
+Important: the API key and agent identifiers stay server-side (never exposed to the client).
+The chat now starts through a signed server-side session instead of embedding a public agent ID in the client bundle.
+If you previously used `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` or `NEXT_PUBLIC_ELEVENLABS_BRANCH_ID`, remove them from Vercel after deploying this version.
 
 ## Deploy (Vercel)
 
 1. Push this repo to GitHub/GitLab.
 2. Create a new Vercel Project and import the repo.
-3. If using a private agent, set `ELEVENLABS_API_KEY` in Vercel Project Settings.
-4. If using a private agent, set `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` in Vercel Project Settings.
-5. Optional: set `NEXT_PUBLIC_ELEVENLABS_BRANCH_ID` if you want to pin a specific branch.
-6. Deploy.
+3. Set `ELEVENLABS_API_KEY` in Vercel Project Settings.
+4. Set `ELEVENLABS_AGENT_ID` in Vercel Project Settings.
+5. Optional: set `ELEVENLABS_BRANCH_ID` if you want to pin a specific branch.
+6. Optional: set `APP_ORIGIN` if the production origin differs from `https://beratung.genaumeinkurs.de`.
+7. Deploy.
 
 Mic and some browser speech APIs require a secure context (HTTPS); Vercel provides this automatically (localhost is also a secure context).
