@@ -93,13 +93,6 @@ function isAgentTimeoutDisconnect(details: DisconnectionDetails): boolean {
   )
 }
 
-function buildWebSocketConversationUrl(agentId: string, branchId: string): string {
-  const url = new URL("wss://api.elevenlabs.io/v1/convai/conversation")
-  url.searchParams.set("agent_id", agentId)
-  url.searchParams.set("branch_id", branchId)
-  return url.toString()
-}
-
 async function fetchSessionConfig(signal: AbortSignal): Promise<ChatSessionConfig> {
   const response = await fetch("/api/get-signed-url", {
     method: "POST",
@@ -296,20 +289,6 @@ export const SecureConversationBar = React.forwardRef<
         if (controller.signal.aborted) return
 
         if (sessionConfig.sessionType === "public") {
-          const trimmedBranchId = sessionConfig.branchId?.trim()
-
-          if (trimmedBranchId) {
-            await conversation.startSession({
-              signedUrl: buildWebSocketConversationUrl(
-                sessionConfig.agentId,
-                trimmedBranchId
-              ),
-              connectionType: "websocket",
-              userId,
-            })
-            return
-          }
-
           await conversation.startSession({
             agentId: sessionConfig.agentId,
             connectionType: "websocket",
